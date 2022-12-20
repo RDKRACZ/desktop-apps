@@ -47,6 +47,7 @@
 #include <QProcess>
 #include <QScreen>
 #include <QStorageInfo>
+#include <QPrinterInfo>
 #include <regex>
 
 #include "cascapplicationmanagerwrapper.h"
@@ -132,6 +133,44 @@ namespace InputArgs {
         }
 
         return web_apps_params;
+    }
+}
+
+namespace EditorJSVariables {
+    QJsonObject vars_object;
+
+    auto init() -> void {
+#ifdef __OS_WIN_XP
+        vars_object["os"] = "winxp";
+#endif
+        if ( InputArgs::contains(L"--help-url") )
+            vars_object["helpUrl"] = QUrl(QString::fromStdWString(InputArgs::argument_value(L"--help-url"))).toString();
+#ifdef URL_WEBAPPS_HELP
+        else if ( !QString(URL_WEBAPPS_HELP).isEmpty() )
+            vars_object["helpUrl"] = URL_WEBAPPS_HELP;
+#endif
+        vars_object["defaultPrinterName"] = QPrinterInfo::defaultPrinterName();
+    }
+
+    auto setVariable(const QString& name, const QString& var) -> void {
+        vars_object[name] = var;
+    }
+
+    auto setVariable(const QString& name, const QJsonObject& obj) -> void {
+        vars_object[name] = obj;
+    }
+
+    auto applyVariable(const QString& name, const QJsonObject& obj) -> void {
+        vars_object[name] = obj;
+        apply();
+    }
+
+    auto toWString() -> std::wstring {
+        return vars_object.isEmpty() ? L"" : Utils::stringifyJson(vars_object).toStdWString();
+    }
+
+    auto apply() -> void {
+        AscAppManager::getInstance().SetRendererProcessVariable(toWString());
     }
 }
 
@@ -259,8 +298,15 @@ void Utils::openUrl(const QString& url)
         system(QString("LD_LIBRARY_PATH='' xdg-email %1")                   // xdg-email filepath email
                             .arg(QString( _url.toEncoded() )).toUtf8());
     } else {
-        system(QString("LD_LIBRARY_PATH='' xdg-open %1")                    // xdg-open workingpath path
-                            .arg(QString( _url.toEncoded() )).toUtf8());
+		if (url.startsWith("xdg:")) {
+			// url is already encoded for xdg
+			std::wstring sUrlW = url.toStdWString().substr(4);
+			std::string sCommand = "LD_LIBRARY_PATH='' xdg-open " + U_TO_UTF8(sUrlW);
+			system(sCommand.c_str());
+		} else {
+			system(QString("LD_LIBRARY_PATH='' xdg-open %1")                    // xdg-open workingpath path
+								.arg(QString( _url.toEncoded() )).toUtf8());
+		}
     }
 #else
     QDesktopServices::openUrl(QUrl(url));
@@ -356,6 +402,26 @@ bool Utils::isFileLocal(const QString& path)
 # endif
 }
 
+QString Utils::uniqFileName(const QString& path)
+{
+    QFileInfo _info(path);
+
+    if ( _info.exists() ) {
+        QString _name = _info.baseName(),
+                _suffix = _info.suffix();
+        QDir _dir = _info.dir();
+
+        int _index{0};
+        while ( true ) {
+            _info = QFileInfo(_dir, _name + QString::number(++_index) + "." + _suffix);
+
+            if ( !_info.exists() ) return _info.absoluteFilePath();
+        }
+    }
+
+    return path;
+}
+
 QString Utils::getPortalName(const QString& url)
 {
     if ( !url.isEmpty() ) {
@@ -374,12 +440,21 @@ QString Utils::stringifyJson(const QJsonObject& obj)
     return QJsonDocument(obj).toJson(QJsonDocument::Compact);
 }
 
+inline double choose_scaling(double s)
+{
+    if ( s > 1.75 ) return 2;
+    else if ( s > 1.5 ) return 1.75;
+    else if ( s > 1.25 ) return 1.5;
+    else if ( s > 1 ) return 1.25;
+    else return 1;
+}
+
 double Utils::getScreenDpiRatio(int scrnum)
 {
     unsigned int _dpi_x = 0;
     unsigned int _dpi_y = 0;
     double nScale = AscAppManager::getInstance().GetMonitorScaleByIndex(scrnum, _dpi_x, _dpi_y);
-    return nScale > 1.5 ? 2 : nScale > 1 ? 1.5 : 1;
+    return choose_scaling(nScale);
 }
 
 double Utils::getScreenDpiRatio(const QPoint& pt)
@@ -399,7 +474,7 @@ double Utils::getScreenDpiRatioByHWND(int hwnd)
     unsigned int _dpi_x = 0;
     unsigned int _dpi_y = 0;
     double nScale = AscAppManager::getInstance().GetMonitorScaleByWindow((WindowHandleId)hwnd, _dpi_x, _dpi_y);
-    return nScale > 1.5 ? 2 : nScale > 1 ? 1.5 : 1;
+    return choose_scaling(nScale);
 }
 
 double Utils::getScreenDpiRatioByWidget(QWidget* wid)
@@ -419,8 +494,7 @@ double Utils::getScreenDpiRatioByWidget(QWidget* wid)
 #endif
 
     if ( dpiApp >= 0 ) {
-        // пока только 1, 1.5 или 2
-        return dpiApp > 1.5 ? 2 : dpiApp > 1 ? 1.5 : 1;
+        return choose_scaling(dpiApp);
     }
 
     return wid->devicePixelRatio();
@@ -630,6 +704,32 @@ namespace WindowHelper {
             m_pChild->deleteLater();
             m_pChild = nullptr;
         }
+    }
+
+    // Linux Environment Info
+    QString desktop_env;
+
+    auto initEnvInfo() -> void {
+        const QString env = QString::fromUtf8(getenv("XDG_CURRENT_DESKTOP"));
+        if (env.indexOf("Unity") != -1) {
+            const QString session = QString::fromUtf8(getenv("DESKTOP_SESSION"));
+            if (session.indexOf("gnome-fallback") != -1)
+                desktop_env = "GNOME";
+            else desktop_env = "UNITY";
+        } else
+        if (env.indexOf("GNOME") != -1)
+            desktop_env = "GNOME";
+        else
+        if (env.indexOf("KDE") != -1)
+            desktop_env = "KDE";
+        else desktop_env = "OTHER";
+    }
+
+    auto getEnvInfo() -> QString {
+        if ( desktop_env.isEmpty() )
+            initEnvInfo();
+
+        return desktop_env;
     }
 
 #else

@@ -42,7 +42,7 @@ QT_PLUGINS ?= $(QT_PATH)/plugins
 
 END2END_ENCRYPT ?= false
 
-UNAME_M := $(shell uname -m)
+UNAME_M ?= $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
 	ARCHITECTURE := 64
 	WIN_ARCH := x64
@@ -79,6 +79,7 @@ else
 endif
 
 include win-linux/package/windows/Makefile.mk
+-include $(BRANDING_DIR)/win-linux/package/windows/branding.mk
 
 DEST_CONV_DIR = $(DEST_DIR)/converter
 DEST_EDITOR_DIR = $(DEST_DIR)/editors

@@ -14,13 +14,13 @@ QLabel[class=msg-icon][type=msg-confirm] {
     background-position: top right;
 }
 #messageBody[scaling="1.25x"] QLabel[class=msg-icon] {
-    /*background-image: url(":/message_icons_1.25x.png");*/
+    background-image: url(":/message_icons_1.25x.png");
 }
 #messageBody[scaling="1.5x"] QLabel[class=msg-icon] {
     background-image: url(":/message_icons_1.5x.png");
 }
 #messageBody[scaling="1.75x"] QLabel[class=msg-icon] {
-    /*background-image: url(":/message_icons_1.75x.png");*/
+    background-image: url(":/message_icons_1.75x.png");
 }
 #messageBody[scaling="2x"] QLabel[class=msg-icon] {
     background-image: url(":/message_icons_2x.png");
@@ -28,8 +28,14 @@ QLabel[class=msg-icon][type=msg-confirm] {
 #messageBody QLabel[class=msg-report] {
     font-size: 11px;
 }
+#messageBody[scaling="1.25x"] QLabel[class=msg-report] {
+    font-size: 14px;
+}
 #messageBody[scaling="1.5x"] QLabel[class=msg-report] {
     font-size: 17px;
+}
+#messageBody[scaling="1.75x"] QLabel[class=msg-report] {
+    font-size: 19px;
 }
 #messageBody[scaling="2x"] QLabel[class=msg-report] {
     font-size: 22px;
@@ -45,6 +51,17 @@ QLabel[class=msg-icon][type=msg-confirm] {
     padding:0 30px;
     height: 33px;
     font-size: 17px;
+}
+#messageBody[scaling="1.25x"] QPushButton {
+    padding:0 25px;
+    height: 28px;
+    font-size: 14px;
+}
+
+#messageBody[scaling="1.75x"] QPushButton {
+    padding:0 35px;
+    height: 38px;
+    font-size: 19px;
 }
 
 QPushButton {
@@ -85,5 +102,43 @@ QPushButton {
 }
 
 #messageBody[uitheme=theme-dark] QPushButton:pressed {
+    background-color: #707070;
+}
+
+/* contrast theme definition */
+#messageBody[uitheme=theme-contrast-dark] {
+    background-color: #2a2a2a;
+    color: #e8e8e8;
+}
+
+#messageBody[uitheme=theme-contrast-dark] QLabel {
+    color: #e8e8e8;
+}
+
+#messageBody[uitheme=theme-contrast-dark] QPushButton {
+    background-color: #555;
+    color: #e8e8e8;
+    border: 1px solid #e8e8e8;
+}
+
+#messageBody[uitheme=theme-contrast-dark][scaling="2x"] QPushButton,
+    #messageBody[uitheme=theme-contrast-dark][scaling="1.5x"] QPushButton
+{
+    border: 2px solid rgba#e8e8e8;
+}
+
+#messageBody[uitheme=theme-contrast-dark] QPushButton:focus {
+    border: 2px solid #e6e6e6;
+}
+
+#messageBody[uitheme=theme-contrast-dark][scaling="1.5x"] QPushButton:focus {
+    border-width: 3px;
+}
+
+#messageBody[uitheme=theme-contrast-dark][scaling="2x"] QPushButton:focus {
+    border-width: 4px;
+}
+
+#messageBody[uitheme=theme-contrast-dark] QPushButton:pressed {
     background-color: #707070;
 }

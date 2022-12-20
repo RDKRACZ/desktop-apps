@@ -92,12 +92,13 @@ CMainWindow::CMainWindow(QRect& rect) :
     if ( _window_rect.isEmpty() )
         _window_rect = QRect(QPoint(100, 100)*m_dpiRatio, MAIN_WINDOW_DEFAULT_SIZE * m_dpiRatio);
 
-    QSize _window_min_size(int(MAIN_WINDOW_MIN_WIDTH * m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * m_dpiRatio));
-    if ( _window_rect.width() < _window_min_size.width() )
-        _window_rect.setWidth(_window_min_size.width());
+    // TODO: skip window min size for usability test
+//    QSize _window_min_size(int(MAIN_WINDOW_MIN_WIDTH * m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * m_dpiRatio));
+//    if ( _window_rect.width() < _window_min_size.width() )
+//        _window_rect.setWidth(_window_min_size.width());
 
-    if ( _window_rect.height() < _window_min_size.height() )
-        _window_rect.setHeight(_window_min_size.height());
+//    if ( _window_rect.height() < _window_min_size.height() )
+//        _window_rect.setHeight(_window_min_size.height());
 
     QRect _screen_size = Utils::getScreenGeometry(_window_rect.topLeft());
     if ( _screen_size.intersects(_window_rect) ) {
@@ -122,7 +123,7 @@ CMainWindow::CMainWindow(QRect& rect) :
     wcx.cbWndExtra	= 0;
     wcx.lpszClassName = WINDOW_CLASS_NAME;
 //    wcx.hbrBackground = CreateSolidBrush(WINDOW_BACKGROUND_COLOR);
-    wcx.hbrBackground = CreateSolidBrush(AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBackground));
+    wcx.hbrBackground = CreateSolidBrush(AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBackground));
     wcx.hCursor = LoadCursor( hInstance, IDC_ARROW );
 
     QIcon icon = Utils::appIcon();
@@ -143,7 +144,11 @@ CMainWindow::CMainWindow(QRect& rect) :
     m_pWinPanel = new CWinPanel(this);
 
     m_pMainPanel = new CMainPanelImpl(m_pWinPanel, true, m_dpiRatio);
+#ifdef __OS_WIN_XP
+    m_pMainPanel->setStyleSheet(AscAppManager::getWindowStylesheets(m_dpiRatio) + "QTabBar::scroller{width:16px;}");
+#else
     m_pMainPanel->setStyleSheet(AscAppManager::getWindowStylesheets(m_dpiRatio));
+#endif
     m_pMainPanel->updateScaling(m_dpiRatio);
     m_pMainPanel->goStart();
 
@@ -162,18 +167,20 @@ CMainWindow::~CMainWindow()
 {
     closed = true;
 
-    WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
-    if (GetWindowPlacement(hWnd, &wp)) {
-        GET_REGISTRY_USER(reg_user)
-        wp.showCmd == SW_MAXIMIZE ?
-                    reg_user.setValue("maximized", true) : reg_user.remove("maximized");
+    if ( isVisible() ) {
+        WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
+        if (GetWindowPlacement(hWnd, &wp)) {
+            GET_REGISTRY_USER(reg_user)
+            wp.showCmd == SW_MAXIMIZE ?
+                        reg_user.setValue("maximized", true) : reg_user.remove("maximized");
 
-        QRect windowRect;
-        windowRect.setTopLeft(QPoint(wp.rcNormalPosition.left, wp.rcNormalPosition.top));
-        windowRect.setBottomRight(QPoint(wp.rcNormalPosition.right, wp.rcNormalPosition.bottom));
-        windowRect.adjust(0,0,-1,-1);
+            QRect windowRect;
+            windowRect.setTopLeft(QPoint(wp.rcNormalPosition.left, wp.rcNormalPosition.top));
+            windowRect.setBottomRight(QPoint(wp.rcNormalPosition.right, wp.rcNormalPosition.bottom));
+            windowRect.adjust(0,0,-1,-1);
 
-        reg_user.setValue("position", windowRect);
+            reg_user.setValue("position", windowRect);
+        }
     }
 
     hide();
@@ -198,8 +205,10 @@ LRESULT CALLBACK CMainWindow::WndProc( HWND hWnd, UINT message, WPARAM wParam, L
                 window->m_dpiRatio = dpi_ratio;
                 refresh_window_scaling_factor(window);
                 window->adjustGeometry();
-
             }
+        } else
+        if ( AscAppManager::IsUseSystemScaling() ) {
+            window->updateScaling();
         }
 
         qDebug() << "WM_DPICHANGED: " << LOWORD(wParam);
@@ -263,7 +272,8 @@ LRESULT CALLBACK CMainWindow::WndProc( HWND hWnd, UINT message, WPARAM wParam, L
             return 0;
         } else
         if ( GET_SC_WPARAM(wParam) == SC_SIZE ) {
-            window->setMinimumSize(int(MAIN_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
+            // TODO: skip window min size for usability test
+//            window->setMinimumSize(int(MAIN_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
             break;
         } else
         if ( GET_SC_WPARAM(wParam) == SC_MOVE ) {
@@ -276,7 +286,7 @@ LRESULT CALLBACK CMainWindow::WndProc( HWND hWnd, UINT message, WPARAM wParam, L
         else
         if (GET_SC_WPARAM(wParam) == SC_RESTORE) {
 //            if ( !WindowHelper::isLeftButtonPressed() )
-                WindowHelper::correctWindowMinimumSize(window->handle());
+//                WindowHelper::correctWindowMinimumSize(window->handle());
 
             break;
         }
@@ -429,7 +439,7 @@ qDebug() << "WM_CLOSE";
     }
 
     case WM_ENTERSIZEMOVE: {
-        WindowHelper::correctWindowMinimumSize(window->handle());
+//        WindowHelper::correctWindowMinimumSize(window->handle());
 
         WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
         if ( GetWindowPlacement(hWnd, &wp) ) {
@@ -472,7 +482,8 @@ qDebug() << "WM_CLOSE";
             window->adjustGeometry();
         }
 #else
-        window->updateScaling();
+        if ( !AscAppManager::IsUseSystemScaling() )
+            window->updateScaling();
 #endif
 
         break;
@@ -490,9 +501,9 @@ qDebug() << "WM_CLOSE";
         PAINTSTRUCT ps;
         HDC hDC = ::BeginPaint(hWnd, &ps);
         HPEN hpenOld = static_cast<HPEN>(::SelectObject(hDC, ::GetStockObject(DC_PEN)));
-        ::SetDCPenColor(hDC, AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBorder));
+        ::SetDCPenColor(hDC, AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBorder));
 
-        HBRUSH hBrush = ::CreateSolidBrush(AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBackground));
+        HBRUSH hBrush = ::CreateSolidBrush(AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBackground));
         HBRUSH hbrushOld = static_cast<HBRUSH>(::SelectObject(hDC, hBrush));
 
         ::Rectangle(hDC, rect.left, rect.top, rect.right, rect.bottom);
@@ -793,6 +804,8 @@ void CMainWindow::slot_mainPageReady()
     CSplash::hideSplash();
 
 #ifdef _UPDMODULE
+    GET_REGISTRY_SYSTEM(reg_system)
+
     OSVERSIONINFO osvi;
 
     ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
@@ -801,18 +814,24 @@ void CMainWindow::slot_mainPageReady()
     GetVersionEx(&osvi);
 
     // skip updates for XP
-    if ( osvi.dwMajorVersion > 5 ) {
+    if ( osvi.dwMajorVersion > 5 && reg_system.value("CheckForUpdates", true).toBool() ) {
         win_sparkle_set_lang(CLangater::getCurrentLangCode().toLatin1());
 
+        GET_REGISTRY_USER(_user);
         const std::wstring argname{L"--updates-appcast-url"};
-        QString _appcast_url = !InputArgs::contains(argname) ? URL_APPCAST_UPDATES : QString::fromStdWString(InputArgs::argument_value(argname));
+        if ( InputArgs::contains(argname) ) {
+            std::wstring _url = InputArgs::argument_value(argname);
+            if ( _url == L"default" ) _user.remove("updatesAppcastUrl");
+            else _user.setValue("updatesAppcastUrl", QString::fromStdWString(_url));
+        }
+
+        QString _appcast_url = _user.value("updatesAppcastUrl", URL_APPCAST_UPDATES).toString();
         static bool _init = false;
         if ( !_init ) {
             _init = true;
 
             QString _prod_name = WINDOW_NAME;
 
-            GET_REGISTRY_USER(_user)
             if (!_user.contains("CheckForUpdates")) {
                 _user.setValue("CheckForUpdates", "1");
             }
@@ -990,15 +1009,16 @@ void CMainWindow::bringToTop() const
     if (IsIconic(hWnd)) {
         ShowWindow(hWnd, SW_SHOWNORMAL);
     }
-
-//    uint foreThread = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-//    if ( foreThread != GetCurrentThreadId() ) {
-//        SetForegroundWindowInternal(handle());
-//    } else {
-        SetForegroundWindow(handle());
-        SetFocus(handle());
-        SetActiveWindow(handle());
-//    }
+    HWND hWndFrg = ::GetForegroundWindow();
+    DWORD appID = ::GetCurrentThreadId();
+    DWORD frgID = ::GetWindowThreadProcessId(hWndFrg, NULL);
+    ::AttachThreadInput(frgID, appID, TRUE);
+    ::SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+    ::SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+    ::SetForegroundWindow(hWnd);
+    ::SetFocus(hWnd);
+    ::SetActiveWindow(hWnd);
+    ::AttachThreadInput(frgID, appID, FALSE);
 }
 
 void CMainWindow::applyTheme(const std::wstring& theme)

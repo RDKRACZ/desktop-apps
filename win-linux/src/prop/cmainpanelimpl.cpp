@@ -55,10 +55,22 @@ void CMainPanelImpl::refreshAboutVersion()
 
     QJsonObject _json_obj;
     _json_obj["version"]    = VER_FILEVERSION_STR;
+#ifdef Q_OS_WIN
+# ifdef Q_OS_WIN64
+    _json_obj["arch"]       = "x64";
+# else
+    _json_obj["arch"]       = "x86";
+# endif
+#endif
     _json_obj["edition"]    = _license;
     _json_obj["appname"]    = WINDOW_NAME;
     _json_obj["rights"]     = "© " ABOUT_COPYRIGHT_STR;
     _json_obj["link"]       = URL_SITE;
+    _json_obj["changelog"]  = "https://github.com/ONLYOFFICE/DesktopEditors/blob/master/CHANGELOG.md";
+
+    QString _package = QSettings(qApp->applicationDirPath() + "/converter/package.config", QSettings::IniFormat).value("package").toString();
+    if ( !_package.isEmpty() )
+        _json_obj["pkg"] = _package;
 
     AscAppManager::sendCommandTo(SEND_TO_ALL_START_PAGE, "app:version", Utils::stringifyJson(_json_obj));
 
@@ -70,20 +82,41 @@ void CMainPanelImpl::refreshAboutVersion()
         })
     );
 
-    std::wstring _force_value = AscAppManager::userSettings(L"force-scale");
-    if ( _force_value == L"1" )
-        _json_obj["uiscaling"] = 100;
-    else
-    if ( _force_value == L"1.5" )
-        _json_obj["uiscaling"] = 150;
-    else
-    if ( _force_value == L"2" )
-        _json_obj["uiscaling"] = 200;
-    else _json_obj["uiscaling"] = 0;
+//    if ( AscAppManager::IsUseSystemScaling() ) {
+//        _json_obj["uiscaling"] = 0;
+//    } else {
+        std::wstring _force_value = AscAppManager::userSettings(L"force-scale");
+        if ( _force_value == L"1" )
+            _json_obj["uiscaling"] = 100;
+        else
+        if ( _force_value == L"1.25" )
+            _json_obj["uiscaling"] = 125;
+        else
+        if ( _force_value == L"1.5" )
+            _json_obj["uiscaling"] = 150;
+        else
+        if ( _force_value == L"1.75" )
+            _json_obj["uiscaling"] = 175;
+        else
+        if ( _force_value == L"2" )
+            _json_obj["uiscaling"] = 200;
+        else {
+            _json_obj["uiscaling"] = 0;
+//            AscAppManager::setUserSettings(L"force-scale", L"1");
+//            _json_obj["uiscaling"] = 100;
+        }
+//    }
 
 #ifndef __OS_WIN_XP
-    _json_obj["uitheme"] = QString::fromStdWString(AscAppManager::themes().current());
+    _json_obj["uitheme"] = QString::fromStdWString(AscAppManager::themes().current().id());
 #endif
+
+#ifdef Q_OS_WIN
+    _json_obj["spellcheckdetect"] = AscAppManager::userSettings(L"spell-check-input-mode") != L"0" ? "auto" : "off";
+#endif
+
+    GET_REGISTRY_USER(reg_user);
+    _json_obj["editorwindowmode"] = reg_user.value("editorWindowMode",false).toBool();
 
     AscAppManager::sendCommandTo(SEND_TO_ALL_START_PAGE, "settings:init", Utils::stringifyJson(_json_obj));
     if ( InputArgs::contains(L"--ascdesktop-reveal-app-config") )
@@ -94,7 +127,7 @@ void CMainPanelImpl::updateScaling(double dpiratio)
 {
     CMainPanel::updateScaling(dpiratio);
 
-    m_pButtonMain->setIcon(":/logo.svg", AscAppManager::themes().isCurrentDark() ? "logo-light" : "logo-dark");
+    m_pButtonMain->setIcon(":/logo.svg", AscAppManager::themes().current().isDark() ? "logo-light" : "logo-dark");
     m_pButtonMain->setIconSize(QSize(85,20)*dpiratio);
 }
 
@@ -103,7 +136,7 @@ void CMainPanelImpl::applyTheme(const std::wstring& theme)
     CMainPanel::applyTheme(theme);
 
     double dpiratio = scaling();
-    m_pButtonMain->setIcon(":/logo.svg", AscAppManager::themes().isCurrentDark() ? "logo-light" : "logo-dark");
+    m_pButtonMain->setIcon(":/logo.svg", AscAppManager::themes().current().isDark() ? "logo-light" : "logo-dark");
     m_pButtonMain->setIconSize(QSize(85,20)*dpiratio);
 }
 

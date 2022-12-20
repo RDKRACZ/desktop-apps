@@ -47,6 +47,7 @@
 #include <QStorageInfo>
 #include <regex>
 #include <functional>
+#include <QPrintEngine>
 
 #include "defines.h"
 #include "cprintprogress.h"
@@ -65,8 +66,6 @@
 #include "shlobj.h"
 
 #else
-#define VK_F4 0x73
-#define VK_TAB 0x09
 #define gTopWinId this
 #include "linux/cx11decoration.h"
 #endif
@@ -83,59 +82,43 @@ using namespace std::placeholders;
 #endif
 
 
-struct printdata {
-public:
-    printdata() : _print_range(QPrintDialog::PrintRange::AllPages) {}
-    QPrinterInfo _printer_info;
-    QPrintDialog::PrintRange _print_range;
-};
-
 CMainPanel::CMainPanel(QWidget *parent, bool isCustomWindow, double dpi_ratio)
     : QWidget(parent),
       CScalingWrapper(dpi_ratio)
       , m_isCustomWindow(isCustomWindow)
-      , m_printData(new printdata)
       , m_mainWindowState(Qt::WindowNoState)
       , m_inFiles(NULL)
       , m_saveAction(0)
 {
     setObjectName("mainPanel");
-    setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current()));
+    setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current().originalId()));
+    setProperty("uithemetype", AscAppManager::themes().current().stype());
+    m_pMainGridLayout = new QGridLayout(this);
+    m_pMainGridLayout->setSpacing(0);
+    m_pMainGridLayout->setObjectName(QString::fromUtf8("mainGridLayout"));
+    m_pMainGridLayout->setContentsMargins(0, 0, 0, 0);
+    setLayout(m_pMainGridLayout);
 
-    QGridLayout *mainGridLayout = new QGridLayout();
-    mainGridLayout->setSpacing( 0 );
-    mainGridLayout->setMargin( 0 );
-    setLayout( mainGridLayout );
-
-    // Central widget
-    QWidget *centralWidget = new QWidget( this );
-    centralWidget->setObjectName("centralWidget");
-    centralWidget->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
-
-    QPalette palette;
-    m_pTabs = new CAscTabWidget(centralWidget);
-    m_pTabs->setGeometry(0, 0, centralWidget->width(), centralWidget->height());
-    m_pTabs->activate(false);
-    m_pTabs->applyUITheme(AscAppManager::themes().current());
-    connect(m_pTabs, SIGNAL(currentChanged(int)), this, SLOT(onTabChanged(int)));
-    connect(m_pTabs, SIGNAL(tabBarClicked(int)), this, SLOT(onTabClicked(int)));
-    connect(m_pTabs, SIGNAL(tabCloseRequested(int)), this, SLOT(onTabCloseRequest(int)));
-    connect(m_pTabs, &CAscTabWidget::closeAppRequest, this, &CMainPanel::onAppCloseRequest);
-    connect(m_pTabs, &CAscTabWidget::editorInserted, bind(&CMainPanel::onTabsCountChanged, this, _2, _1, 1));
-    connect(m_pTabs, &CAscTabWidget::editorRemoved, bind(&CMainPanel::onTabsCountChanged, this, _2, _1, -1));
+    // Set custom TabBar
+    m_pTabBarWrapper = new CTabBarWrapper(this);
+    m_pTabBarWrapper->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    m_pMainGridLayout->addWidget(m_pTabBarWrapper, 0, 1, 1, 1);
 
 //    QSize wide_btn_size(29*g_dpi_ratio, TOOLBTN_HEIGHT*g_dpi_ratio);
-
+    QPalette palette;
 #ifdef __linux__
-    m_boxTitleBtns = new CX11Caption(centralWidget);
+    m_boxTitleBtns = new CX11Caption(this);
 #else
-    m_boxTitleBtns = new QWidget(centralWidget);
+    m_boxTitleBtns = new QWidget(this);
+    m_boxTitleBtns->winId();
 #endif
-
+    m_boxTitleBtns->setObjectName("CX11Caption");
+    m_boxTitleBtns->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_pMainGridLayout->addWidget(m_boxTitleBtns, 0, 2, 1, 1);
     QHBoxLayout * layoutBtns = new QHBoxLayout(m_boxTitleBtns);
 
 #ifdef __DONT_WRITE_IN_APP_TITLE
-    QLabel * label = new QLabel;
+    QLabel * label = new QLabel(m_boxTitleBtns);
 #else
     QLabel * label = new QLabel(APP_TITLE);
 #endif
@@ -147,9 +130,11 @@ CMainPanel::CMainPanel(QWidget *parent, bool isCustomWindow, double dpi_ratio)
     layoutBtns->addWidget(label);
 
     // Main
-    m_pButtonMain = new CSVGPushButton(centralWidget);
+    m_pButtonMain = new CSVGPushButton(this);
     m_pButtonMain->setObjectName( "toolButtonMain" );
     m_pButtonMain->setProperty("class", "active");
+    m_pButtonMain->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    m_pMainGridLayout->addWidget(m_pButtonMain, 0, 0, 1, 1);
     QObject::connect(m_pButtonMain, SIGNAL(clicked()), this, SLOT(pushButtonMainClicked()));
 
     if (isCustomWindow) {
@@ -165,15 +150,15 @@ CMainPanel::CMainPanel(QWidget *parent, bool isCustomWindow, double dpi_ratio)
         };
 
         // Minimize
-        m_pButtonMinimize = _creatToolButton("toolButtonMinimize", centralWidget);
+        m_pButtonMinimize = _creatToolButton("toolButtonMinimize", this);
         QObject::connect(m_pButtonMinimize, &QPushButton::clicked, this, &CMainPanel::pushButtonMinimizeClicked);
 
         // Maximize
-        m_pButtonMaximize = _creatToolButton("toolButtonMaximize", centralWidget);
+        m_pButtonMaximize = _creatToolButton("toolButtonMaximize", this);
         QObject::connect(m_pButtonMaximize, &QPushButton::clicked, this, &CMainPanel::pushButtonMaximizeClicked);
 
         // Close
-        m_pButtonClose = _creatToolButton("toolButtonClose", centralWidget);
+        m_pButtonClose = _creatToolButton("toolButtonClose", this);
         QObject::connect(m_pButtonClose, &QPushButton::clicked, this, &CMainPanel::pushButtonCloseClicked);
 
         layoutBtns->addWidget(m_pButtonMinimize);
@@ -181,14 +166,14 @@ CMainPanel::CMainPanel(QWidget *parent, bool isCustomWindow, double dpi_ratio)
         layoutBtns->addWidget(m_pButtonClose);
 
 #ifdef __linux__
-        mainGridLayout->setMargin( CX11Decoration::customWindowBorderWith() * dpi_ratio );
+        m_pMainGridLayout->setMargin( CX11Decoration::customWindowBorderWith() * dpi_ratio );
 
         connect(m_boxTitleBtns, SIGNAL(mouseDoubleClicked()), this, SLOT(pushButtonMaximizeClicked()));
 #endif
     } else {
 //        m_pButtonMain->setProperty("theme", "light");
 
-        QLinearGradient gradient(centralWidget->rect().topLeft(), QPoint(centralWidget->rect().left(), 29));
+        QLinearGradient gradient(this->rect().topLeft(), QPoint(this->rect().left(), 29));
         gradient.setColorAt(0, QColor("#eee"));
         gradient.setColorAt(1, QColor("#e4e4e4"));
 
@@ -198,13 +183,22 @@ CMainPanel::CMainPanel(QWidget *parent, bool isCustomWindow, double dpi_ratio)
     }
 
 //    m_pTabs->setAutoFillBackground(true);
+    // Set TabWidget
+    m_pTabs = new CAscTabWidget(this, tabBar());
+    m_pTabs->setObjectName(QString::fromUtf8("ascTabWidget"));
+    m_pMainGridLayout->addWidget(m_pTabs, 1, 0, 1, 4);
+    m_pTabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_pTabs->activate(false);
+    m_pTabs->applyUITheme(AscAppManager::themes().current().id());
+
+    connect(tabBar(), SIGNAL(currentChanged(int)), this, SLOT(onTabChanged(int)));
+    connect(tabBar(), SIGNAL(tabBarClicked(int)), this, SLOT(onTabClicked(int)));
+    connect(tabBar(), SIGNAL(tabCloseRequested(int)), this, SLOT(onTabCloseRequest(int)));
+    connect(m_pTabs, &CAscTabWidget::closeAppRequest, this, &CMainPanel::onAppCloseRequest);
+    connect(m_pTabs, &CAscTabWidget::editorInserted, bind(&CMainPanel::onTabsCountChanged, this, _2, _1, 1));
+    connect(m_pTabs, &CAscTabWidget::editorRemoved, bind(&CMainPanel::onTabsCountChanged, this, _2, _1, -1));
     m_pTabs->setPalette(palette);
     m_pTabs->setCustomWindowParams(isCustomWindow);
-    m_pTabs->m_pMainButton = m_pButtonMain;
-
-    mainGridLayout->addWidget( centralWidget );
-
-//    RecalculatePlaces();
 }
 
 void CMainPanel::attachStartPanel(QCefView * const view)
@@ -214,43 +208,13 @@ void CMainPanel::attachStartPanel(QCefView * const view)
     view->setMouseTracking(m_pButtonMain->hasMouseTracking());
 #endif
 
-    QWidget * centralwidget = layout()->itemAt(0)->widget();
-    view->setParent(centralwidget);
+    m_pMainWidget->setParent(this);
+    m_pMainGridLayout->addWidget(m_pMainWidget, 1, 0, 1, 4);
+    m_pMainWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
 
     if ( !m_pTabs->isActiveWidget() )
-        view->show();
-}
-
-void CMainPanel::RecalculatePlaces()
-{
-    int cbw = 0;
-
-#ifdef __linux
-    QWidget * cw = findChild<QWidget *>("centralWidget");
-    int windowW = cw->width(),
-        windowH = cw->height(),
-#else
-    int windowW = width(),
-        windowH = height(),
-#endif
-        captionH = int(TITLE_HEIGHT * scaling()),
-        btnMainWidth = int(BUTTON_MAIN_WIDTH * scaling());
-
-    m_pTabs->setGeometry(cbw, cbw, windowW, windowH);
-
-    int docCaptionW = windowW - m_pTabs->tabBar()->width() - btnMainWidth;
-    int contentH = windowH - captionH;
-
-    if (docCaptionW < 1)
-        docCaptionW = 1;
-    if (contentH < 1)
-        contentH = 1;
-
-    m_boxTitleBtns->setFixedSize(docCaptionW, int(TOOLBTN_HEIGHT * scaling()));
-    m_boxTitleBtns->move(windowW - m_boxTitleBtns->width() + cbw, cbw);
-
-    if ( m_pMainWidget )
-        m_pMainWidget->setGeometry(cbw, captionH + cbw, windowW, contentH);
+        m_pMainWidget->show();
 }
 
 #ifdef __linux
@@ -262,7 +226,6 @@ QWidget * CMainPanel::getTitleWidget()
 void CMainPanel::setMouseTracking(bool enable)
 {
     QWidget::setMouseTracking(enable);
-    findChild<QWidget *>("centralWidget")->setMouseTracking(enable);
     findChild<QLabel *>("labelAppTitle")->setMouseTracking(enable);
 
     m_boxTitleBtns->setMouseTracking(enable);
@@ -323,6 +286,7 @@ void CMainPanel::pushButtonMainClicked()
         m_pTabs->activate(false);
         m_pMainWidget->setHidden(false);
         m_pTabs->setFocusedView();
+        m_pButtonMain->setProperty("class", "active");
 
         ((QCefView *)m_pMainWidget)->setFocusToCef();
         onTabChanged(m_pTabs->currentIndex());
@@ -334,11 +298,13 @@ void CMainPanel::toggleButtonMain(bool toggle, bool delay)
     auto _toggle = [=] (bool state) {
         if (m_pTabs->isActiveWidget() == state) {
             if ( state ) {
+                m_pButtonMain->setProperty("class", "active");
                 m_pTabs->activate(false);
                 m_pMainWidget->setHidden(false);
 //                m_pTabs->setFocusedView();
 //                ((QCefView *)m_pMainWidget)->setFocusToCef();
             } else {
+                m_pButtonMain->setProperty("class", "normal");
                 m_pTabs->activate(true);
                 m_pMainWidget->setHidden(true);
                 m_pTabs->setFocusedView();
@@ -363,12 +329,6 @@ void CMainPanel::focus() {
     }
 }
 
-void CMainPanel::resizeEvent(QResizeEvent * event)
-{
-    QWidget::resizeEvent(event);
-    RecalculatePlaces();
-}
-
 void CMainPanel::onTabClicked(int index)
 {
     Q_UNUSED(index)
@@ -388,10 +348,10 @@ void CMainPanel::onTabsCountChanged(int count, int i, int d)
     }
 
     if ( d < 0 ) {
-        RecalculatePlaces();
+        //RecalculatePlaces();
     } else
     QTimer::singleShot(200, [=]{
-        RecalculatePlaces();
+        //RecalculatePlaces();
     });
 }
 
@@ -408,7 +368,7 @@ void CMainPanel::onEditorAllowedClose(int uid)
             _view->deleteLater();
 
             m_pTabs->removeTab(_index);
-            m_pTabs->adjustTabsSize();
+            //m_pTabs->adjustTabsSize();
             if ( !m_pTabs->count() ) {
                 m_pTabs->setProperty("empty", true);
                 m_pTabs->style()->polish(m_pTabs);
@@ -483,6 +443,8 @@ int CMainPanel::tabCloseRequest(int index)
             }
 
             return _result;
+        } else {
+            m_pTabs->editorCloseRequest(index);
         }
     }
 
@@ -784,11 +746,6 @@ void CMainPanel::onEditorConfig(int, std::wstring cfg)
 
 void CMainPanel::onWebAppsFeatures(int id, std::wstring opts)
 {
-    // TODO: remove in release 6.5, theme id is sended on webapp:entry event
-    int index = m_pTabs->tabIndexByView(id);
-    if ( !(index < 0) )
-        AscAppManager::sendCommandTo(m_pTabs->panel(index)->cef(), L"uitheme:changed", AscAppManager::themes().current());
-
     m_pTabs->setEditorOptions(id, opts);
 }
 
@@ -914,7 +871,7 @@ void CMainPanel::onEditorActionRequest(int vid, const QString& args)
 {
     int index = m_pTabs->tabIndexByView(vid);
     if ( !(index < 0) ) {
-        if ( args.contains(QRegExp("action\\\":\\\"close")) ) {
+        if ( args.contains(QRegExp("action\\\":\\\"file:close")) ) {
             bool _is_local = m_pTabs->isLocalByIndex(index);
             onTabCloseRequest(index);
 
@@ -954,21 +911,27 @@ void CMainPanel::onDocumentPrint(void * opts)
     WindowHelper::CParentDisable disabler(qobject_cast<QWidget*>(parent()));
 #endif
 
-    CAscPrintEnd * pData = (CAscPrintEnd *)opts;
-    CCefView * pView = AscAppManager::getInstance().GetViewById(pData->get_Id());
+    CCefView * pView = AscAppManager::getInstance().GetViewById(AscAppManager::printData().viewId());
 
-    int pagesCount = pData->get_PagesCount(),
-        currentPage = pData->get_CurrentPage();
+    int pagesCount = AscAppManager::printData().pagesCount(),
+        currentPage = AscAppManager::printData().pageCurent();
+
 
     if (pView && !(pagesCount < 1)) {
 //#ifdef _WIN32
         NSEditorApi::CAscMenuEvent * pEvent;
-        QAscPrinterContext * pContext = m_printData->_printer_info.isNull() ?
-                    new QAscPrinterContext() : new QAscPrinterContext(m_printData->_printer_info);
+        QAscPrinterContext * pContext = new QAscPrinterContext(AscAppManager::printData().printerInfo());
 
         QPrinter * printer = pContext->getPrinter();
         printer->setOutputFileName("");
         printer->setFromTo(1, pagesCount);
+        printer->printEngine()->setProperty(QPrintEngine::PPK_DocumentName,
+                    m_pTabs->titleByIndex(m_pTabs->tabIndexByView(AscAppManager::printData().viewId()), true));
+
+        if ( !AscAppManager::printData().isQuickPrint() ) {
+            printer->setPageOrientation(AscAppManager::printData().pageOrientation());
+            printer->setPageSize(AscAppManager::printData().pageSize());
+        }
 
 #ifdef _WIN32
         CPrintDialogWinWrapper wrapper(printer, TOP_NATIVE_WINDOW_HANDLE);
@@ -978,20 +941,38 @@ void CMainPanel::onDocumentPrint(void * opts)
 #endif // _WIN32
 
         dialog->setWindowTitle(tr("Print Document"));
-        dialog->setEnabledOptions(QPrintDialog::PrintPageRange | QPrintDialog::PrintCurrentPage | QPrintDialog::PrintToFile);
-        if (!(currentPage < 0))
-            currentPage++, dialog->setOptions(dialog->options() | QPrintDialog::PrintCurrentPage);
-        dialog->setPrintRange(m_printData->_print_range);
+        dialog->setEnabledOptions(QPrintDialog::PrintPageRange | QPrintDialog::PrintToFile);
+        if (!(currentPage < 0)) {
+            currentPage++;
+            dialog->setEnabledOptions(dialog->enabledOptions() | QPrintDialog::PrintCurrentPage);
+            dialog->setOptions(dialog->options() | QPrintDialog::PrintCurrentPage);
+        }
+        dialog->setPrintRange(AscAppManager::printData().printRange());
+        if ( dialog->printRange() == QPrintDialog::PageRange )
+            dialog->setFromTo(AscAppManager::printData().pageFrom(), AscAppManager::printData().pageTo());
 
         int start = -1, finish = -1;
+        int modal_res = QDialog::Accepted;
+
+        if ( AscAppManager::printData().isQuickPrint() ) {
+            dialog->accept();
+        } else {
 #ifdef _WIN32
-        int res = wrapper.showModal();
+            modal_res = wrapper.showModal();
 #else
-        int res = dialog->exec();
+            qApp->processEvents();
+            modal_res = dialog->exec();
 #endif
-        if (res == QDialog::Accepted) {
-            m_printData->_printer_info = QPrinterInfo::printerInfo(printer->printerName());
-            m_printData->_print_range = dialog->printRange();
+        }
+
+        if ( modal_res == QDialog::Accepted ) {
+            AscAppManager::printData().setPrinterInfo(QPrinterInfo::printerInfo(printer->printerName()));
+//            m_printData->_print_range = dialog->printRange();
+
+#ifdef Q_OS_LINUX
+            if ( AscAppManager::printData().isQuickPrint() && printer->outputFormat() == QPrinter::PdfFormat )
+                printer->setOutputFileName(Utils::uniqFileName(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/print.pdf"));
+#endif
 
             switch(dialog->printRange()) {
             case QPrintDialog::AllPages: start = 1, finish = pagesCount; break;
@@ -1006,6 +987,7 @@ void CMainPanel::onDocumentPrint(void * opts)
                 finish < 1 && (finish = 1);
                 finish < start && (finish = start);
 
+                pContext->SetPageOrientation(pView->GetPrintPageOrientation(start - 1));
                 if ( pContext->BeginPaint() ) {
 #if defined(_WIN32)
                     CPrintProgress progressDlg((HWND)parentWidget()->winId());
@@ -1036,7 +1018,11 @@ void CMainPanel::onDocumentPrint(void * opts)
                         if (progressDlg.isRejected())
                             break;
 
-                        start < finish && printer->newPage();
+                        if (start < finish)
+                        {
+                            pContext->SetPageOrientation(pView->GetPrintPageOrientation(start));
+                            printer->newPage();
+                        }
                     }
                     pContext->EndPaint();
                 }
@@ -1057,7 +1043,7 @@ void CMainPanel::onDocumentPrint(void * opts)
     }
 
     printInProcess = false;
-    RELEASEINTERFACE(pData)
+//    RELEASEINTERFACE(pData)
 }
 
 void CMainPanel::onLocalFileSaveAs(void * d)
@@ -1214,15 +1200,18 @@ void CMainPanel::onOutsideAuth(QString json)
 void CMainPanel::applyTheme(const std::wstring& theme)
 {
     this->setProperty("uitheme", QString::fromStdWString(theme));
+    setProperty("uithemetype", AscAppManager::themes().current().stype());
 
     for (int i(m_pTabs->count()); !(--i < 0);) {
         CAscTabData& _doc = *m_pTabs->panel(i)->data();
         if ( _doc.isViewType(cvwtEditor) && !_doc.closed() ) {
-            AscAppManager::sendCommandTo(m_pTabs->panel(i)->cef(), L"uitheme:changed", theme);
+            AscAppManager::sendCommandTo(m_pTabs->panel(i)->cef(), L"uitheme:changed", AscAppManager::themes().current().id());
         }
     }
 
 //    m_pTabs->style()->polish(m_pTabs);
+    m_boxTitleBtns->style()->polish(m_boxTitleBtns);
+    m_pTabBarWrapper->style()->polish(m_pTabBarWrapper);
     m_pButtonMain->style()->polish(m_pButtonMain);
     if ( m_pButtonMinimize ) {
         m_pButtonMinimize->style()->polish(m_pButtonMinimize);
@@ -1232,8 +1221,8 @@ void CMainPanel::applyTheme(const std::wstring& theme)
 
     m_pTabs->applyUITheme(theme);
 
-    QWidget * centralwidget = layout()->itemAt(0)->widget();
-    centralwidget->style()->polish(centralwidget);
+    //QWidget * centralwidget = layout()->itemAt(0)->widget();
+    //centralwidget->style()->polish(centralwidget);
     style()->polish(this);
 
     update();
@@ -1266,22 +1255,15 @@ void CMainPanel::updateScaling(double dpiratio)
         m_pButtonClose->setFixedSize(small_btn_size);
     }
 
-    m_pButtonMain->setGeometry(0, 0, int(BUTTON_MAIN_WIDTH * dpiratio), int(TITLE_HEIGHT * dpiratio));
+    //m_pButtonMain->setGeometry(0, 0, int(BUTTON_MAIN_WIDTH * dpiratio), int(TITLE_HEIGHT * dpiratio));
+    m_pButtonMain->setFixedSize(int(BUTTON_MAIN_WIDTH * dpiratio), int(TITLE_HEIGHT * dpiratio));
 
-    QString _tabs_stylesheets = dpiratio > 1.55 ? ":/sep-styles/tabbar@2x" : dpiratio > 1.1 ? ":/sep-styles/tabbar@1.5x" : ":/sep-styles/tabbar";
-    if ( m_isCustomWindow ) {
-        _tabs_stylesheets += ".qss";
-    } else {
-#ifdef __linux__
-        _tabs_stylesheets += ".nix.qss";
-#endif
-    }
-
-    QFile styleFile(_tabs_stylesheets);
-    styleFile.open( QFile::ReadOnly );
-    m_pTabs->setStyleSheet(QString(styleFile.readAll()));
+    const std::string _tabs_stylesheets = ":/sep-styles/tabbar@" + QString::number(dpiratio).toStdString() + "x.qss";
+    std::vector<std::string> _files{_tabs_stylesheets, ":/themes/theme-contrast-dark.qss"};
+    QString _style = Utils::readStylesheets(&_files);
+    m_pTabBarWrapper->applyTheme(_style);
+    m_pTabs->setStyleSheet(_style);
     m_pTabs->updateScaling(dpiratio);
-    styleFile.close();
 
 //    std::map<int, std::pair<QString, QString> > icons;
 //    if ( dpiratio > 1 ) {
@@ -1307,8 +1289,8 @@ void CMainPanel::updateScaling(double dpiratio)
 //    m_pTabs->setTabIcons(icons);
     m_pTabs->reloadTabIcons();
 
-    if ( m_mainWindowState == Qt::WindowMaximized )
-        RecalculatePlaces();
+    //if ( m_mainWindowState == Qt::WindowMaximized )
+        //RecalculatePlaces();
 }
 
 void CMainPanel::setScreenScalingFactor(double s)
@@ -1349,3 +1331,8 @@ bool CMainPanel::holdUrl(const QString& url, AscEditorType type) const
 }
 
 CAscTabWidget * CMainPanel::tabWidget(){return m_pTabs;}
+
+CTabBar *CMainPanel::tabBar()
+{
+    return m_pTabBarWrapper->tabBar();
+}

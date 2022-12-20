@@ -63,7 +63,7 @@ CEditorWindow::CEditorWindow(const QRect& rect, CTabPanel* panel)
 
 #ifdef Q_OS_LINUX
     if ( !CX11Decoration::isDecorated() )
-        applyTheme(AscAppManager::themes().current());
+        applyTheme(AscAppManager::themes().current().id());
 
     setObjectName("editorWindow");
     m_pMainPanel = createMainPanel(this);
@@ -76,7 +76,7 @@ CEditorWindow::CEditorWindow(const QRect& rect, CTabPanel* panel)
     }
 #else
 
-    applyTheme(AscAppManager::themes().current());
+    applyTheme(AscAppManager::themes().current().id());
 
     m_pMainPanel = createMainPanel(m_pWinPanel);
     m_pWinPanel->show();
@@ -88,6 +88,11 @@ CEditorWindow::CEditorWindow(const QRect& rect, CTabPanel* panel)
     AscAppManager::bindReceiver(panel->cef()->GetId(), d_ptr.get());
     AscAppManager::sendCommandTo(panel->cef(), L"editor:config", L"request");
 
+    QFileInfo i{QString::fromStdWString(panel->data()->url())};
+    if ( i.suffix() == "oform" || panel->data()->hasFeature(L"uitype\":\"fillform") ) {
+        d_ptr->ffWindowCustomize();
+    }
+
 //    QObject::connect(d_ptr.get()->buttonDock(), &QPushButton::clicked, [=]{
 //        if ( !d_ptr->isReporterMode ) {
 //            CAscApplicationManagerWrapper & app = static_cast<CAscApplicationManagerWrapper &>(AscAppManager::getInstance());
@@ -95,6 +100,8 @@ CEditorWindow::CEditorWindow(const QRect& rect, CTabPanel* panel)
 //                    qobject_cast<CTabPanel *>(m_pMainView)->view()->GetCefView()->GetId(), L"dock");
 //        }
 //    });
+
+    QTimer::singleShot(100, [=]{focus();});
 }
 
 CEditorWindow::CEditorWindow(const QRect& r, const QString& s, QWidget * w)
@@ -207,13 +214,19 @@ QWidget * CEditorWindow::createMainPanel(QWidget * parent, const QString& title)
 //    centralWidget->setObjectName("centralWidget");
 //    centralWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    if ( m_dpiRatio > 1.55 )
+    if ( m_dpiRatio > 1.75 )
         mainPanel->setProperty("zoom", "2x");
     else
-    if ( m_dpiRatio > 1 )
+    if ( m_dpiRatio > 1.5 )
+        mainPanel->setProperty("zoom", "1.75x");
+    else
+    if ( m_dpiRatio > 1.25 )
         mainPanel->setProperty("zoom", "1.5x");
+    else
+    if ( m_dpiRatio > 1 )
+        mainPanel->setProperty("zoom", "1.25x");
 
-    mainPanel->setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current()));
+    mainPanel->setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current().id()));
     mainPanel->setStyleSheet(AscAppManager::getWindowStylesheets(m_dpiRatio) + m_css);
 
     if ( isCustomWindowStyle() ) {
@@ -225,6 +238,11 @@ QWidget * CEditorWindow::createMainPanel(QWidget * parent, const QString& title)
                 mainPanel->setProperty("window", "pretty");
             m_boxTitleBtns->setParent(mainPanel);
             m_boxTitleBtns->layout()->addWidget(d_ptr.get()->iconUser());
+
+#ifdef Q_OS_WIN
+            // TODO: because vs2019 components bug. need to debug
+            ::SetParent((HWND)m_boxTitleBtns->winId(), (HWND)parent->winId());
+#endif
         }
 
         m_boxTitleBtns->layout()->addWidget(m_buttonMinimize);
@@ -289,7 +307,7 @@ void CEditorWindow::onMinimizeEvent()
 
 void CEditorWindow::onClickButtonHome()
 {
-    AscAppManager::gotoMainWindow();
+    AscAppManager::gotoMainWindow(size_t(this));
 }
 
 void CEditorWindow::onMaximizeEvent()
@@ -341,7 +359,11 @@ void CEditorWindow::setScreenScalingFactor(double newfactor)
 {
     CSingleWindowPlatform::setScreenScalingFactor(newfactor);
 
-    m_pMainPanel->setProperty("zoom", newfactor > 1 ? "2x": "1x");
+    if ( newfactor > 1.75 ) m_pMainPanel->setProperty("zoom", "2x"); else
+    if ( newfactor > 1.5 ) m_pMainPanel->setProperty("zoom", "1.75x"); else
+    if ( newfactor > 1.25 ) m_pMainPanel->setProperty("zoom", "1.5x"); else
+    if ( newfactor > 1 ) m_pMainPanel->setProperty("zoom", "1.25x");
+    else m_pMainPanel->setProperty("zoom", "1");
 
     QString css(AscAppManager::getWindowStylesheets(newfactor));
     css.append(m_css);

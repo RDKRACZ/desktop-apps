@@ -125,6 +125,15 @@ LRESULT CALLBACK CSingleWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, 
         return DefWindowProc(hWnd, message, wParam, lParam);
 
     switch ( message ) {
+    case WM_DPICHANGED:
+        if ( AscAppManager::IsUseSystemScaling() ) {
+            const double dpi_ratio = Utils::getScreenDpiRatioByHWND(int(hWnd));
+
+            if ( dpi_ratio != window->m_dpiRatio )
+                window->setScreenScalingFactor(dpi_ratio);
+        }
+        break;
+
     case WM_KEYDOWN: {
         if ( wParam != VK_TAB )
             return DefWindowProc( hWnd, message, wParam, lParam );
@@ -246,14 +255,15 @@ LRESULT CALLBACK CSingleWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, 
         }
         break;
 
-    case WM_EXITSIZEMOVE: {
-        uchar dpi_ratio = Utils::getScreenDpiRatioByHWND(int(hWnd));
+    case WM_EXITSIZEMOVE:
+        if ( !AscAppManager::IsUseSystemScaling() ) {
+            double dpi_ratio = Utils::getScreenDpiRatioByHWND(int(hWnd));
 
-        if ( dpi_ratio != window->m_dpiRatio )
-            window->setScreenScalingFactor(dpi_ratio);
+            if ( dpi_ratio != window->m_dpiRatio )
+                window->setScreenScalingFactor(dpi_ratio);
+        }
 
         break;
-    }
 
     case WM_NCACTIVATE:
         return TRUE;
@@ -265,9 +275,9 @@ LRESULT CALLBACK CSingleWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, 
         PAINTSTRUCT ps;
         HDC hDC = ::BeginPaint(hWnd, &ps);
         HPEN hpenOld = static_cast<HPEN>(::SelectObject(hDC, ::GetStockObject(DC_PEN)));
-        ::SetDCPenColor(hDC, AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBorder));
+        ::SetDCPenColor(hDC, AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBorder));
 
-        HBRUSH hBrush = ::CreateSolidBrush(AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBackground));
+        HBRUSH hBrush = ::CreateSolidBrush(AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBackground));
         HBRUSH hbrushOld = static_cast<HBRUSH>(::SelectObject(hDC, hBrush));
 
         ::Rectangle(hDC, rect.left, rect.top, rect.right, rect.bottom);
@@ -460,7 +470,7 @@ void CSingleWindow::applyTheme(const std::wstring& themeid)
     RedrawWindow(m_hWnd, nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void CSingleWindow::setScreenScalingFactor(uchar factor)
+void CSingleWindow::setScreenScalingFactor(double factor)
 {
     QString css(AscAppManager::getWindowStylesheets(factor));
 
@@ -506,7 +516,7 @@ QWidget * CSingleWindow::createMainPanel(QWidget * parent, const QString& title,
 {
     QWidget * mainPanel = new QWidget(parent);
     mainPanel->setObjectName("mainPanel");
-    mainPanel->setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current()));
+    mainPanel->setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current().id()));
 
     QGridLayout * mainGridLayout = new QGridLayout();
     mainGridLayout->setSpacing(0);
@@ -524,6 +534,7 @@ QWidget * CSingleWindow::createMainPanel(QWidget * parent, const QString& title,
     m_boxTitleBtns = new CX11Caption(centralWidget);
 #else
     m_boxTitleBtns = new QWidget(centralWidget);
+    m_boxTitleBtns->winId();
 #endif
 
     QHBoxLayout * layoutBtns = new QHBoxLayout(m_boxTitleBtns);

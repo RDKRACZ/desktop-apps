@@ -51,6 +51,7 @@ $(document).ready(function() {
     $('a[action="new:docx"] > .text').text(utils.Lang.newDoc);
     $('a[action="new:xlsx"] > .text').text(utils.Lang.newXlsx);
     $('a[action="new:pptx"] > .text').text(utils.Lang.newPptx);
+    $('a[action="new:form"] > .text').text(utils.Lang.newForm);
 
 
     if (!localStorage.welcome) {
@@ -125,6 +126,8 @@ function onActionClick(e) {
                 app.controller.recent.view.updatelistsize();
             }
         });
+
+        CommonEvents.fire('panel:show', [action]);
     }
 };
 
@@ -133,6 +136,8 @@ function selectAction(action) {
     $('.tool-menu a[action='+action+']').parent().addClass('selected');
     $('.action-panel').hide();
     $('.action-panel.' + action).show();
+
+    CommonEvents.fire('panel:show', [action]);
 };
 
 function hideAction(action, hide) {
@@ -165,6 +170,7 @@ function onNewFileClick(e) {
     case 'new:docx': t = 'word'; break;
     case 'new:xlsx': t = 'cell'; break;
     case 'new:pptx': t = 'slide'; break;
+    case 'new:form': t = 'form'; break;
     default: break;
     }
 
@@ -208,6 +214,7 @@ function openFile(from, model) {
         } else {
             const params = {
                     id: model.fileid,
+                    name: model.name,
                     path: model.path,
                     type: model.type
                 };

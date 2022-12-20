@@ -43,6 +43,7 @@
 #include "ceditorwindow.h"
 #include "cwindowsqueue.h"
 #include "ceventdriver.h"
+#include "cprintdata.h"
 
 #ifdef _WIN32
 #include "win/mainwindow.h"
@@ -78,7 +79,9 @@ struct sWinTag {
 enum class CScalingFactor
 {
     SCALING_FACTOR_1,
+    SCALING_FACTOR_1_25,
     SCALING_FACTOR_1_5,
+    SCALING_FACTOR_1_75,
     SCALING_FACTOR_2,
 };
 
@@ -110,6 +113,7 @@ private:
 
     std::shared_ptr<CAppUpdater> m_updater;
     std::shared_ptr<CThemes> m_themes;
+
 public:
     CWindowsQueue<sWinTag>& closeQueue();
     CEventDriver& commonEvents();
@@ -156,7 +160,7 @@ public:
 
     static void             startApp();
     static void             initializeApp();
-    static void             gotoMainWindow();
+    static void             gotoMainWindow(size_t pw = 0);
     static void             handleInputCmd(const std::vector<std::wstring>&);
     static void             closeMainWindow();
     static void             closeEditorWindow(const size_t);
@@ -176,6 +180,7 @@ public:
     static QCefView *       createViewer(QWidget * parent);
     static QString          newFileName(int format);
     static CThemes &        themes();
+    static CPrintData&      printData();
 
     static ParentHandle     windowHandleFromId(int id);
 

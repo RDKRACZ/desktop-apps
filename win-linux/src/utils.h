@@ -52,6 +52,15 @@ namespace InputArgs {
     auto change_webapps_param(const std::wstring& from, const std::wstring& to) -> const std::wstring&;
 }
 
+namespace EditorJSVariables {
+    auto init() -> void;
+    auto setVariable(const QString& name, const QString& var) -> void;
+    auto setVariable(const QString& name, const QJsonObject& obj) -> void;
+    auto applyVariable(const QString& name, const QJsonObject& obj) -> void;
+    auto toWString() -> std::wstring;
+    auto apply() -> void;
+}
+
 class Utils {
 public:
     static QStringList * getInputFiles(const QStringList& inlist);
@@ -72,6 +81,7 @@ public:
     static QScreen * screenAt(const QPoint&);
     static QString replaceBackslash(const QString&);
     static bool isFileLocal(const QString&);
+    static QString uniqFileName(const QString& path);
     static bool setAppUserModelId(const QString&);
 
     static bool makepath(const QString&);
@@ -100,6 +110,8 @@ namespace WindowHelper {
     };
 
 //    auto check_button_state(Qt::MouseButton b) -> bool;
+//    auto initEnvInfo() -> void;
+    auto getEnvInfo() -> QString;
 #else
     auto isWindowSystemDocked(HWND handle) -> bool;
     auto correctWindowMinimumSize(HWND handle) -> void;

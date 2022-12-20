@@ -51,6 +51,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QStandardPaths>
+#include <QPrintEngine>
 
 #ifdef _WIN32
 #include "win/cprintdialog.h"
@@ -81,6 +83,13 @@ const QString g_css =
         "#mainPanel[window=pretty] QPushButton#toolButtonClose:hover{background-color:#d42b2b;}"
         "#mainPanel[window=pretty] QPushButton#toolButtonMaximize{background-image:url(:/max_light.png);}"
         "#mainPanel[window=pretty] #labelTitle{color:#fff;}"
+        "#mainPanel[zoom=\"1.25x\"] #toolButtonMinimize,#mainPanel[zoom=\"125x\"] #toolButtonClose,"
+        "#mainPanel[zoom=\"1.25x\"] #toolButtonMaximize{padding: 6px 15px 9px;}"
+        "#mainPanel[zoom=\"1.25x\"] #iconuser,"
+        "#mainPanel[zoom=\"1.25x\"] #labelTitle{font-size:15px;}"
+        "#mainPanel[zoom=\"1.25x\"][window=pretty] QPushButton#toolButtonMinimize,"
+        "#mainPanel[zoom=\"1.25x\"][window=pretty] QPushButton#toolButtonClose {background-image:url(:/minclose_light_1.25x.png);}"
+        "#mainPanel[zoom=\"1.25x\"][window=pretty] QPushButton#toolButtonMaximize{background-image:url(:/max_light_1.25x.png);}"
         "#mainPanel[zoom=\"1.5x\"] #toolButtonMinimize,#mainPanel[zoom=\"15x\"] #toolButtonClose,"
         "#mainPanel[zoom=\"1.5x\"] #toolButtonMaximize{padding: 8px 18px 11px;}"
         "#mainPanel[zoom=\"1.5x\"] #iconuser,"
@@ -88,6 +97,13 @@ const QString g_css =
         "#mainPanel[zoom=\"1.5x\"][window=pretty] QPushButton#toolButtonMinimize,"
         "#mainPanel[zoom=\"1.5x\"][window=pretty] QPushButton#toolButtonClose {background-image:url(:/minclose_light_1.5x.png);}"
         "#mainPanel[zoom=\"1.5x\"][window=pretty] QPushButton#toolButtonMaximize{background-image:url(:/max_light_1.5x.png);}"
+        "#mainPanel[zoom=\"1.75x\"] #toolButtonMinimize,#mainPanel[zoom=\"175x\"] #toolButtonClose,"
+        "#mainPanel[zoom=\"1.75x\"] #toolButtonMaximize{padding: 9px 21px 12px;}"
+        "#mainPanel[zoom=\"1.75x\"] #iconuser,"
+        "#mainPanel[zoom=\"1.75x\"] #labelTitle{font-size:21px;}"
+        "#mainPanel[zoom=\"1.75x\"][window=pretty] QPushButton#toolButtonMinimize,"
+        "#mainPanel[zoom=\"1.75x\"][window=pretty] QPushButton#toolButtonClose {background-image:url(:/minclose_light_1.75x.png);}"
+        "#mainPanel[zoom=\"1.75x\"][window=pretty] QPushButton#toolButtonMaximize{background-image:url(:/max_light_1.75x.png);}"
         "#mainPanel[zoom=\"2x\"] #toolButtonMinimize,#mainPanel[zoom=\"2x\"] #toolButtonClose,"
         "#mainPanel[zoom=\"2x\"] #toolButtonMaximize{padding: 10px 24px 14px;}"
         "#mainPanel[zoom=\"2x\"] #iconuser,"
@@ -96,15 +112,17 @@ const QString g_css =
         "#mainPanel[zoom=\"2x\"][window=pretty] QPushButton#toolButtonClose {background-image:url(:/minclose_light_2x.png);}"
         "#mainPanel[zoom=\"2x\"][window=pretty] QPushButton#toolButtonMaximize{background-image:url(:/max_light_2x.png);}"
         "#mainPanel[uitheme=theme-dark] #iconuser,"
-        "#mainPanel[uitheme=theme-dark] #labelTitle{color:rgba(255,255,255,80%);}";
+        "#mainPanel[uitheme=theme-dark] #labelTitle{color:rgba(255,255,255,80%);}"
+        "#mainPanel[uitheme=theme-contrast-dark] #iconuser,"
+        "#mainPanel[uitheme=theme-contrast-dark] #labelTitle{color:#e8e8e8;}";
 
-auto prepare_editor_css(int type, const std::wstring& theme) -> QString {
+auto prepare_editor_css(int type, const CTheme& theme) -> QString {
     std::wstring c;
     switch (type) {
-    default: c = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrWindowBackground); break;
-    case etDocument: c = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabWordActive); break;
-    case etPresentation: c = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabSlideActive); break;
-    case etSpreadsheet: c = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabCellActive); break;
+    default: c = theme.value(CTheme::ColorRole::ecrWindowBackground); break;
+    case etDocument: c = theme.value(CTheme::ColorRole::ecrTabWordActive); break;
+    case etPresentation: c = theme.value(CTheme::ColorRole::ecrTabSlideActive); break;
+    case etSpreadsheet: c = theme.value(CTheme::ColorRole::ecrTabCellActive); break;
     }
 
     return g_css.arg(QString::fromStdWString(c));
@@ -112,11 +130,11 @@ auto prepare_editor_css(int type, const std::wstring& theme) -> QString {
 
 auto editor_color(int type) -> QColor {
     switch (type) {
-    case etDocument: return AscAppManager::themes().color(CThemes::ColorRole::ecrTabWordActive);
-    case etPresentation: return AscAppManager::themes().color(CThemes::ColorRole::ecrTabSlideActive);
-    case etSpreadsheet: return AscAppManager::themes().color(CThemes::ColorRole::ecrTabCellActive);
+    case etDocument: return AscAppManager::themes().current().color(CTheme::ColorRole::ecrTabWordActive);
+    case etPresentation: return AscAppManager::themes().current().color(CTheme::ColorRole::ecrTabSlideActive);
+    case etSpreadsheet: return AscAppManager::themes().current().color(CTheme::ColorRole::ecrTabCellActive);
 //#ifdef Q_OS_WIN
-    default: return AscAppManager::themes().color(CThemes::ColorRole::ecrWindowBackground);
+    default: return AscAppManager::themes().current().color(CTheme::ColorRole::ecrWindowBackground);
 //#else
 //    default: return QColor(WINDOW_BACKGROUND_COLOR);
 //#endif
@@ -125,16 +143,6 @@ auto editor_color(int type) -> QColor {
 
 class CEditorWindowPrivate : public CCefEventsGate
 {
-    struct sPrintData {
-        sPrintData() : _print_range(QPrintDialog::PrintRange::AllPages)
-        {}
-
-        QPrinterInfo _printer_info;
-        QPrintDialog::PrintRange _print_range;
-    };
-
-    sPrintData m_printData;
-
     CEditorWindow * window = nullptr;
     CElipsisLabel * iconuser = nullptr;
     QPushButton * btndock = nullptr;
@@ -166,7 +174,8 @@ public:
         leftboxbuttons->layout()->setSpacing(0);
         leftboxbuttons->layout()->setMargin(0);
 
-        if ( false && !InputArgs::contains(L"--single-window-app") ) {
+//        if ( false && !InputArgs::contains(L"--single-window-app") )
+        {
             CSVGPushButton * btnHome = new CSVGPushButton;
             btnHome->setProperty("class", "normal");
             btnHome->setProperty("act", "tool");
@@ -175,6 +184,7 @@ public:
             btnHome->setMouseTracking(true);
             btnHome->setIcon(":/title/icons/buttons.svg", "svg-btn-home");
             btnHome->setToolTip(CEditorWindow::tr("Open main window"));
+            btnHome->setIconOpacity(AscAppManager::themes().current().color(CTheme::ColorRole::ecrButtonNormalOpacity));
             m_mapTitleButtons["home"] = btnHome;
 
             connect(btnHome, &QPushButton::clicked, std::bind(&CEditorWindow::onClickButtonHome, window));
@@ -192,7 +202,10 @@ public:
         btn->setDisabled(jsonobj["disabled"].toBool());
         btn->setIconSize(QSize(20,20) * window->m_dpiRatio);
         btn->setMouseTracking(true);
-        btn->setIconOpacity(AscAppManager::themes().isCurrentDark() ? NSThemeDark::button_normal_opacity : NSThemeLight::button_normal_opacity);
+        btn->setIconOpacity(AscAppManager::themes().current().color(CTheme::ColorRole::ecrButtonNormalOpacity));
+        if ( jsonobj.contains("visible") && !jsonobj["visible"].toBool() ) {
+            btn->hide();
+        }
 
         m_mapTitleButtons[action] = btn;
 
@@ -226,9 +239,11 @@ public:
             iconUser()->hide();
             window->m_labelTitle->setText(APP_TITLE);
 
+            CSVGPushButton * btn = m_mapTitleButtons["home"];
+            btn->setFillDark(!AscAppManager::themes().current().isDark());
+
 #ifdef Q_OS_WIN
-            window->setWindowBackgroundColor(
-                        QColor(QString::fromStdWString(AscAppManager::themes().value(CThemes::ColorRole::ecrWindowBackground))));
+            window->setWindowBackgroundColor(AscAppManager::themes().current().color(CTheme::ColorRole::ecrWindowBackground));
 #endif
         }
     }
@@ -288,7 +303,7 @@ public:
 
     void onEditorActionRequest(int, const QString& json) override
     {
-        if ( json.contains(QRegExp("action\\\":\\\"close")) ) {
+        if ( json.contains(QRegExp("action\\\":\\\"file:close")) ) {
             window->closeWindow();
         }
     }
@@ -306,9 +321,13 @@ public:
     {
         CCefEventsGate::onDocumentName(data);
 
-        if ( canExtendTitle() && window->isCustomWindowStyle() ) {
-            window->setWindowTitle(m_panel->data()->title());
-            window->m_boxTitleBtns->repaint();
+        if ( window->isCustomWindowStyle() ) {
+            if ( !canExtendTitle() /*|| !window->isCustomWindowStyle()*/ ) {
+                window->m_labelTitle->setText(APP_TITLE);
+            } else {
+                window->setWindowTitle(m_panel->data()->title());
+                window->m_boxTitleBtns->repaint();
+            }
         }
     }
 
@@ -318,14 +337,14 @@ public:
 
         if ( canExtendTitle() && window->isCustomWindowStyle() ) {
             window->m_pMainPanel->setProperty("window", "pretty");
-            changeTheme(AscAppManager::themes().current());
+            changeTheme(AscAppManager::themes().current().id());
         }
     }
 
     void changeTheme(const std::wstring& theme)
     {
         if ( canExtendTitle() && window->isCustomWindowStyle() ) {
-            window->m_css = prepare_editor_css(panel()->data()->contentType(), theme);
+            window->m_css = prepare_editor_css(panel()->data()->contentType(), AscAppManager::themes().current());
 
             if ( window->m_pMainPanel ) {
                 window->m_pMainPanel->setProperty("uitheme", QString::fromStdWString(theme));
@@ -337,34 +356,34 @@ public:
 
             for ( auto c: leftboxbuttons->findChildren<QPushButton *>()) {
                 CSVGPushButton * btn = static_cast<CSVGPushButton *>(c);
-                btn->setIconOpacity(AscAppManager::themes().isThemeDark(theme) ? NSThemeDark::button_normal_opacity : NSThemeLight::button_normal_opacity);
+                btn->setIconOpacity(AscAppManager::themes().current().color(CTheme::ColorRole::ecrButtonNormalOpacity));
             }
 
 #ifdef Q_OS_WIN
             std::wstring background, border;
             switch (panel()->data()->contentType()) {
             case etDocument:
-                background = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabWordActive);
+                background = AscAppManager::themes().current().value(CTheme::ColorRole::ecrTabWordActive);
                 border = background;
                 break;
             case etPresentation:
-                background = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabSlideActive);
+                background = AscAppManager::themes().current().value(CTheme::ColorRole::ecrTabSlideActive);
                 border = background;
                 break;
             case etSpreadsheet:
-                background = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrTabCellActive);
+                background = AscAppManager::themes().current().value(CTheme::ColorRole::ecrTabCellActive);
                 border = background;
                 break;
             default:
-                background = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrWindowBackground);
-                border = AscAppManager::themes().value(theme, CThemes::ColorRole::ecrWindowBorder);
+                background = AscAppManager::themes().current().value(CTheme::ColorRole::ecrWindowBackground);
+                border = AscAppManager::themes().current().value(CTheme::ColorRole::ecrWindowBorder);
             }
 
             window->setWindowColors(QColor(QString::fromStdWString(background)), QColor(QString::fromStdWString(border)));
 #endif
         }
 
-        AscAppManager::sendCommandTo(panel()->cef(), L"uitheme:changed", theme);
+        AscAppManager::sendCommandTo(panel()->cef(), L"uitheme:changed", AscAppManager::themes().current().id());
     }
 
     void onDocumentChanged(int id, bool state) override
@@ -428,6 +447,11 @@ public:
         } else AscAppManager::cancelClose();
     }
 
+    void onDocumentPrint(void * data)  override
+    {
+        onDocumentPrint(AscAppManager::printData().pageCurent(), AscAppManager::printData().pagesCount());
+    }
+
     void onDocumentPrint(int currentpage, uint pagescount) override
     {
         if ( isPrinting ) return;
@@ -439,12 +463,17 @@ public:
 #endif
         if ( !(pagescount < 1) ) {
             CAscMenuEvent * pEvent;
-            QAscPrinterContext * pContext = m_printData._printer_info.isNull() ?
-                        new QAscPrinterContext() : new QAscPrinterContext(m_printData._printer_info);
+            QAscPrinterContext * pContext = new QAscPrinterContext(AscAppManager::printData().printerInfo());
 
             QPrinter * printer = pContext->getPrinter();
             printer->setOutputFileName("");
             printer->setFromTo(1, pagescount);
+            printer->printEngine()->setProperty(QPrintEngine::PPK_DocumentName, m_panel->data()->title(true));
+
+            if ( !AscAppManager::printData().isQuickPrint() ) {
+                printer->setPageOrientation(AscAppManager::printData().pageOrientation());
+                printer->setPageSize(AscAppManager::printData().pageSize());
+            }
 
 #ifdef _WIN32
             CPrintDialogWinWrapper wrapper(printer, window->handle());
@@ -454,19 +483,38 @@ public:
 #endif // _WIN32
 
             dialog->setWindowTitle(CEditorWindow::tr("Print Document"));
-            dialog->setEnabledOptions(QPrintDialog::PrintPageRange | QPrintDialog::PrintCurrentPage | QPrintDialog::PrintToFile);
-            if (!(currentpage < 0))
-                currentpage++, dialog->setOptions(dialog->options() | QPrintDialog::PrintCurrentPage);
-            dialog->setPrintRange(m_printData._print_range);
+            dialog->setEnabledOptions(QPrintDialog::PrintPageRange | QPrintDialog::PrintToFile);
+            if (!(currentpage < 0)) {
+                currentpage++;
+                dialog->setEnabledOptions(dialog->enabledOptions() | QPrintDialog::PrintCurrentPage);
+                dialog->setOptions(dialog->options() | QPrintDialog::PrintCurrentPage);
+            }
+
+            dialog->setPrintRange(AscAppManager::printData().printRange());
+            if ( dialog->printRange() == QPrintDialog::PageRange )
+                dialog->setFromTo(AscAppManager::printData().pageFrom(), AscAppManager::printData().pageTo());
 
             int start = -1, finish = -1;
+            int modal_res = QDialog::Accepted;
+
+            if ( AscAppManager::printData().isQuickPrint() ) {
+                dialog->accept();
+            } else {
+
 #ifdef _WIN32
-            if ( wrapper.showModal() == QDialog::Accepted ) {
+                modal_res = wrapper.showModal();
 #else
-            if ( dialog->exec() == QDialog::Accepted ) {
+                modal_res = dialog->exec();
 #endif
-                m_printData._printer_info = QPrinterInfo::printerInfo(printer->printerName());
-                m_printData._print_range = dialog->printRange();
+            }
+
+            if ( modal_res == QDialog::Accepted ) {
+                AscAppManager::printData().setPrinterInfo(QPrinterInfo::printerInfo(printer->printerName()));
+
+#ifdef Q_OS_LINUX
+                if ( AscAppManager::printData().isQuickPrint() && printer->outputFormat() == QPrinter::PdfFormat )
+                    printer->setOutputFileName(Utils::uniqFileName(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/print.pdf"));
+#endif
 
                 switch(dialog->printRange()) {
                 case QPrintDialog::AllPages: start = 1, finish = pagescount; break;
@@ -655,8 +703,17 @@ public:
     {
         panel()->data()->setFeatures(f);
 
+        if ( m_panel->data()->hasFeature(L"uitype\":\"fillform") ) {
+             ffWindowCustomize();
+        }
+
         if ( panel()->data()->hasFeature(L"crypted\":true") && boxtitlelabel && !iconcrypted ) {
             qobject_cast<QBoxLayout *>(boxtitlelabel->layout())->insertWidget(0, iconCrypted());
+        }
+
+        if ( panel()->data()->hasFeature(L"readonly\":") && boxtitlelabel ) {
+            window->setWindowTitle(m_panel->data()->title());
+            window->m_boxTitleBtns->repaint();
         }
     }
 
@@ -675,7 +732,8 @@ public:
                         bool _is_disabled = _disabled["all"].toBool();
 
                         for (auto& btn: m_mapTitleButtons) {
-                            btn->setDisabled(_is_disabled);
+                            if ( m_mapTitleButtons["home"] != btn )
+                                btn->setDisabled(_is_disabled);
                         }
                     } else {
                         for (const auto& k: _disabled.keys()) {
@@ -691,6 +749,12 @@ public:
                         if ( m_mapTitleButtons.contains(b) )
                             m_mapTitleButtons[b]->setIcon(":/title/icons/buttons.svg", "svg-btn-" + _btns_changed.value(b).toString());
                     }
+                } else
+                if ( objRoot.contains("visible") ) {
+                    QJsonObject _btns_changed = objRoot["visible"].toObject();
+                    if ( _btns_changed.contains("quickprint") ) {
+                        m_mapTitleButtons["quickprint"]->setVisible(_btns_changed["quickprint"].toBool());
+                    }
                 }
             }
         }
@@ -699,7 +763,8 @@ public:
     bool canExtendTitle() const
     {
         if ( m_panel->data()->features().empty() ) return true;
-        else  return !viewerMode() && (m_panel->data()->isLocal() || m_panel->data()->hasFeature(L"titlebuttons\":"));
+        else if ( m_panel->data()->hasFeature(L"uitype\":\"fillform") ) return true;
+        else return !viewerMode() && (m_panel->data()->isLocal() || m_panel->data()->hasFeature(L"titlebuttons\":"));
     }
 
     auto viewerMode() const -> bool {
@@ -720,7 +785,8 @@ public:
     }
 
     auto customizeTitleLabel() -> void {
-        window->m_boxTitleBtns->layout()->removeWidget(window->m_labelTitle);
+        QHBoxLayout * _layout = qobject_cast<QHBoxLayout *>(window->m_boxTitleBtns->layout());
+        _layout->removeWidget(window->m_labelTitle);
 
         boxtitlelabel = new QWidget;
         boxtitlelabel->setLayout(new QHBoxLayout);
@@ -732,7 +798,17 @@ public:
         }
 
         boxtitlelabel->layout()->addWidget(window->m_labelTitle);
-        qobject_cast<QHBoxLayout*>(window->m_boxTitleBtns->layout())->insertWidget(1, boxtitlelabel);
+        _layout->insertWidget(1, boxtitlelabel);
+
+        if ( _layout->itemAt(0)->widget() != leftboxbuttons )
+            _layout->insertWidget(0, leftboxbuttons);
+    }
+
+    auto ffWindowCustomize() -> void {
+        QGridLayout * const _layout = static_cast<QGridLayout*>(window->m_pMainPanel->layout());
+        if ( !_layout->findChild<QWidget*>(window->m_boxTitleBtns->objectName()) ) {
+            _layout->addWidget(window->m_boxTitleBtns,0,0,Qt::AlignTop);
+        }
     }
 };
 

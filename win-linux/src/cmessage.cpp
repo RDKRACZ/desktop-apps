@@ -160,7 +160,7 @@ CMessage::CMessage(QWidget * p)
     layout()->setSizeConstraint(QLayout::SetFixedSize);
 #endif
     m_centralWidget->setObjectName("messageBody");
-    m_centralWidget->setProperty("uitheme", AscAppManager::themes().isCurrentDark() ? "theme-dark" : "theme-light");
+    m_centralWidget->setProperty("uitheme", QString::fromStdWString(AscAppManager::themes().current().originalId()));
 
     QVBoxLayout * _c_layout  = new QVBoxLayout;
     QHBoxLayout * _h_layout2 = new QHBoxLayout;
@@ -216,11 +216,17 @@ CMessage::CMessage(QWidget * p)
     _styles.append(QString("QPushButton{min-width:%1px;}").arg(int(40*m_priv->dpiRatio)));
     m_centralWidget->setStyleSheet( _styles );
 
-    if ( m_priv->dpiRatio > 1.55 ) {
+    if ( m_priv->dpiRatio > 1.75 ) {
         m_centralWidget->setProperty("scaling", "2x");
     } else
-    if ( m_priv->dpiRatio > 1 ) {
+    if ( m_priv->dpiRatio > 1.55 ) {
+        m_centralWidget->setProperty("scaling", "1.75x");
+    } else
+    if ( m_priv->dpiRatio > 1.25 ) {
         m_centralWidget->setProperty("scaling", "1.5x");
+    } else
+    if ( m_priv->dpiRatio > 1 ) {
+        m_centralWidget->setProperty("scaling", "1.25x");
     }
 
     m_priv->focusConnection = QObject::connect(qApp, &QApplication::focusChanged, [&] (QWidget * from, QWidget *to){
@@ -391,7 +397,7 @@ void CMessage::modal()
     if ( m_priv->defaultButton ) {
         _focused_handle = (HWND)m_priv->defaultButton->winId();
         QTimer::singleShot(50, m_centralWidget, [&]{
-            if ( !AscAppManager::themes().isCurrentDark() )
+            if ( !AscAppManager::themes().current().isDark() )
                 for (auto * btn: m_priv->buttons) {
                     btn->setAutoDefault(true);
                 }
@@ -461,7 +467,8 @@ void CMessage::onWindowActivate(bool activate)
         if ( m_priv->focusWidget ) {
             m_centralWidget->activateWindow();
             QTimer::singleShot(0, m_centralWidget, [&]{
-                m_priv->focusWidget->setFocus(Qt::FocusReason::MouseFocusReason);
+                if (m_priv->focusWidget)
+                    m_priv->focusWidget->setFocus(Qt::FocusReason::MouseFocusReason);
             });
         }
     } else {

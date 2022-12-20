@@ -46,6 +46,9 @@ public:
     void setIconOpacity(const QColor& normal);
     void setDisabled(bool);
     void setUseStateOpacity(bool);
+    void setFillDark(bool dark);
+
+    bool setProperty(const char *name, const QVariant &value);
 
 private:
     QByteArray m_svglayout;

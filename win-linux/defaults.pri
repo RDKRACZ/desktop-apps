@@ -17,7 +17,38 @@ TRANSLATIONS = ./langs/en.ts \
                 ./langs/pt_BR.ts \
                 ./langs/it_IT.ts \
                 ./langs/zh_CN.ts \
-                ./langs/pl.ts
+                ./langs/pl.ts \
+                ./langs/be.ts \
+                ./langs/bg.ts \
+                ./langs/ca.ts \
+                ./langs/da.ts \
+                ./langs/el_GR.ts \
+                ./langs/et.ts \
+                ./langs/fi.ts \
+                ./langs/ga.ts \
+                ./langs/gl.ts \
+                ./langs/hi.ts \
+                ./langs/hr.ts \
+                ./langs/hu.ts \
+                ./langs/hy.ts \
+                ./langs/id.ts \
+                ./langs/ja.ts \
+                ./langs/ko.ts \
+                ./langs/lo.ts \
+                ./langs/lt.ts \
+                ./langs/lv.ts \
+                ./langs/nl.ts \
+                ./langs/no.ts \
+                ./langs/pt_PT.ts \
+                ./langs/ro.ts \
+                ./langs/sl.ts \
+                ./langs/sv.ts \
+                ./langs/tr.ts \
+                ./langs/uk.ts \
+                ./langs/vi.ts \
+                ./langs/be.ts \
+                ./langs/zh_HK.ts
+
 
 CORE_ROOT_DIR = $$PWD/../../core
 BASEEDITORS_PATH = $$PWD/../../desktop-sdk/ChromiumBasedEditors
@@ -34,6 +65,8 @@ INCLUDEPATH += \
 
 HEADERS += \
     $$PWD/src/asctabwidget.h \
+    $$PWD/src/cprintdata.h \
+    $$PWD/src/ctabbarwrapper.h \
     $$PWD/src/version.h \
     $$PWD/src/defines.h \
     $$PWD/src/cdownloadwidget.h \
@@ -77,7 +110,9 @@ HEADERS += \
 #    src/casclabel.h
 
 SOURCES += \
+    $$PWD/src/cprintdata.cpp \
     $$PWD/src/csplash.cpp \
+    $$PWD/src/ctabbarwrapper.cpp \
     $$PWD/src/main.cpp \
     $$PWD/src/asctabwidget.cpp\
     $$PWD/src/cdownloadwidget.cpp \
@@ -88,6 +123,7 @@ SOURCES += \
     $$PWD/src/cascapplicationmanagerwrapper.cpp \
     $$PWD/src/ctabbar.cpp \
     $$PWD/src/casctabdata.cpp \
+    $$PWD/src/utils.cpp \
     $$PWD/src/cstyletweaks.cpp \
     $$PWD/src/chelp.cpp \
     $$PWD/src/cmainpanel.cpp \
@@ -129,6 +165,14 @@ ENV_PRODUCT_VERSION = $$(PRODUCT_VERSION)
                VER_PRODUCT_VERSION_COMMAS=$$replace(FULL_PRODUCT_VERSION, \., ",")
 }
 
+CMD_IN_HELP_URL = $$join(URL_WEBAPPS_HELP,,\\\",\\\")
+!isEmpty(CMD_IN_HELP_URL) {
+    DEFINES += URL_WEBAPPS_HELP=$$CMD_IN_HELP_URL
+    message(webapps help url: $$CMD_IN_HELP_URL)
+} else {
+    message(no webapps help url found)
+}
+
 PLATFORM_BUILD=$$CORE_BUILDS_PLATFORM_PREFIX
 
 # cef
@@ -139,7 +183,7 @@ core_windows {
 }
 core_linux:LIBS += -L$$CORE_3DPARTY_PATH/cef/$$PLATFORM_BUILD/build -lcef
 
-ADD_DEPENDENCY(PdfReader, PdfWriter, DjVuFile, XpsFile, HtmlRenderer, UnicodeConverter, hunspell, ooxmlsignature, kernel, graphics, videoplayer, ascdocumentscore, qtascdocumentscore)
+ADD_DEPENDENCY(PdfReader, PdfWriter, DjVuFile, XpsFile, HtmlRenderer, UnicodeConverter, hunspell, ooxmlsignature, kernel, kernel_network, graphics, videoplayer, ascdocumentscore, qtascdocumentscore)
 
 core_linux {
     QT += network x11extras

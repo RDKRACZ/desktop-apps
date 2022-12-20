@@ -48,8 +48,8 @@ Q_GUI_EXPORT HICON qt_pixmapToWinHICON(const QPixmap &);
 
 CSingleWindowPlatform::CSingleWindowPlatform(const QRect& rect, const QString& title, QWidget * panel)
     : CSingleWindowBase(const_cast<QRect&>(rect))
-    , m_bgColor(AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBackground))
-    , m_borderColor(AscAppManager::themes().colorRef(CThemes::ColorRole::ecrWindowBorder))
+    , m_bgColor(AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBackground))
+    , m_borderColor(AscAppManager::themes().current().colorRef(CTheme::ColorRole::ecrWindowBorder))
 {
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
@@ -87,6 +87,22 @@ CSingleWindowPlatform::~CSingleWindowPlatform()
 {
     QObject::disconnect(m_modalSlotConnection);
 
+    if ( !AscAppManager::mainWindow() || !AscAppManager::mainWindow()->isVisible() ) {
+        WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
+        if (GetWindowPlacement(m_hWnd, &wp)) {
+            GET_REGISTRY_USER(reg_user)
+            wp.showCmd == SW_MAXIMIZE ?
+                        reg_user.setValue("maximized", true) : reg_user.remove("maximized");
+
+            QRect windowRect;
+            windowRect.setTopLeft(QPoint(wp.rcNormalPosition.left, wp.rcNormalPosition.top));
+            windowRect.setBottomRight(QPoint(wp.rcNormalPosition.right, wp.rcNormalPosition.bottom));
+            windowRect.adjust(0,0,-1,-1);
+
+            reg_user.setValue("position", windowRect);
+        }
+    }
+
     m_closed = true;
     DestroyWindow(m_hWnd);
 
@@ -106,7 +122,7 @@ LRESULT CALLBACK CSingleWindowPlatform::WndProc(HWND hWnd, UINT message, WPARAM 
 
     switch ( message ) {
     case WM_DPICHANGED:
-        if ( !WindowHelper::isLeftButtonPressed() ) {
+        if ( !WindowHelper::isLeftButtonPressed() || AscAppManager::IsUseSystemScaling() ) {
             double dpi_ratio = Utils::getScreenDpiRatioByHWND(int(hWnd));
 
             if ( dpi_ratio != window->m_dpiRatio ) {
@@ -128,15 +144,17 @@ LRESULT CALLBACK CSingleWindowPlatform::WndProc(HWND hWnd, UINT message, WPARAM 
             return 0;
         } else
         if ( GET_SC_WPARAM(wParam) == SC_SIZE ) {
-            if ( WindowHelper::isWindowSystemDocked(hWnd) )
-                window->setMinimumSize(int(EDITOR_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
-            else window->setMinimumSize(int(MAIN_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
+            // TODO: skip window min size for usability test
+//            if ( WindowHelper::isWindowSystemDocked(hWnd) )
+//                window->setMinimumSize(int(EDITOR_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
+//            else window->setMinimumSize(int(MAIN_WINDOW_MIN_WIDTH * window->m_dpiRatio), int(MAIN_WINDOW_MIN_HEIGHT * window->m_dpiRatio));
 
             break;
         } else
         if (GET_SC_WPARAM(wParam) == SC_RESTORE) {
 //            if ( !WindowHelper::isLeftButtonPressed() ) {
-                WindowHelper::correctWindowMinimumSize(hWnd);
+            // TODO: skip window min size for usability test
+//                WindowHelper::correctWindowMinimumSize(hWnd);
 
             break;
         }
@@ -181,7 +199,7 @@ LRESULT CALLBACK CSingleWindowPlatform::WndProc(HWND hWnd, UINT message, WPARAM 
     }
 
     case WM_SETFOCUS: {
-        if ( !window->m_closed ) {
+        if ( !window->m_closed && window->visible() ) {
 //        window->focusMainPanel();
             window->focus();
         }
@@ -289,7 +307,7 @@ LRESULT CALLBACK CSingleWindowPlatform::WndProc(HWND hWnd, UINT message, WPARAM 
         return TRUE;}
 
     case WM_ENTERSIZEMOVE: {
-        WindowHelper::correctWindowMinimumSize(hWnd);
+//        WindowHelper::correctWindowMinimumSize(hWnd);
         WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
         if ( GetWindowPlacement(hWnd, &wp) ) {
             MONITORINFO info{sizeof(MONITORINFO)};
@@ -433,9 +451,19 @@ bool CSingleWindowPlatform::visible()
 
 void CSingleWindowPlatform::bringToTop()
 {
-    SetForegroundWindow(m_hWnd);
-    SetFocus(m_hWnd);
-    SetActiveWindow(m_hWnd);
+    if (IsIconic(m_hWnd)) {
+        ShowWindow(m_hWnd, SW_SHOWNORMAL);
+    }
+    HWND hWndFrg = ::GetForegroundWindow();
+    DWORD appID = ::GetCurrentThreadId();
+    DWORD frgID = ::GetWindowThreadProcessId(hWndFrg, NULL);
+    ::AttachThreadInput(frgID, appID, TRUE);
+    ::SetWindowPos(m_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+    ::SetWindowPos(m_hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+    ::SetForegroundWindow(m_hWnd);
+    ::SetFocus(m_hWnd);
+    ::SetActiveWindow(m_hWnd);
+    ::AttachThreadInput(frgID, appID, FALSE);
 }
 
 void CSingleWindowPlatform::applyWindowState(Qt::WindowState s)
@@ -531,7 +559,7 @@ void CSingleWindowPlatform::onMaximizeEvent()
 
 void CSingleWindowPlatform::setScreenScalingFactor(double f)
 {
-    bool _is_up = f > m_dpiRatio;
+    double change_factor = f / m_dpiRatio;
     CSingleWindowBase::setScreenScalingFactor(f);
 
     if ( !WindowHelper::isWindowSystemDocked(m_hWnd) ) {
@@ -539,12 +567,13 @@ void CSingleWindowPlatform::setScreenScalingFactor(double f)
 
         WINDOWPLACEMENT wp{sizeof(WINDOWPLACEMENT)};
         if ( GetWindowPlacement(m_hWnd, &wp) ) {
+
             if ( wp.showCmd == SW_MAXIMIZE ) {
                 MONITORINFO info{sizeof(MONITORINFO)};
                 GetMonitorInfo(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTOPRIMARY), &info);
 
-                m_moveNormalRect = _is_up ? QRect{m_moveNormalRect.topLeft() * 2, m_moveNormalRect.size() * 2} :
-                                                QRect{m_moveNormalRect.topLeft() / 2, m_moveNormalRect.size() / 2};
+                int dest_width_change = int(m_moveNormalRect.width() * (1 - change_factor));
+                m_moveNormalRect = QRect{m_moveNormalRect.translated(dest_width_change/2,0).topLeft(), m_moveNormalRect.size() * change_factor};
 
                 wp.rcNormalPosition.left = info.rcMonitor.left + m_moveNormalRect.left();
                 wp.rcNormalPosition.top = info.rcMonitor.top + m_moveNormalRect.top();
@@ -553,9 +582,9 @@ void CSingleWindowPlatform::setScreenScalingFactor(double f)
 
                 SetWindowPlacement(m_hWnd, &wp);
             } else {
-                QRect source_rect = QRect{QPoint(wp.rcNormalPosition.left, wp.rcNormalPosition.top),QPoint(wp.rcNormalPosition.right,wp.rcNormalPosition.bottom)},
-                    dest_rect = _is_up ? QRect{source_rect.translated(-source_rect.width()/2,0).topLeft(), source_rect.size()*2} :
-                                                QRect{source_rect.translated(source_rect.width()/4,0).topLeft(), source_rect.size()/2};
+                QRect source_rect = QRect{QPoint(wp.rcNormalPosition.left, wp.rcNormalPosition.top),QPoint(wp.rcNormalPosition.right,wp.rcNormalPosition.bottom)};
+                int dest_width_change = int(source_rect.width() * (1 - change_factor));
+                QRect dest_rect = QRect{source_rect.translated(dest_width_change/2,0).topLeft(), source_rect.size() * change_factor};
 
                 SetWindowPos(m_hWnd, NULL, dest_rect.left(), dest_rect.top(), dest_rect.width(), dest_rect.height(), SWP_NOZORDER);
             }

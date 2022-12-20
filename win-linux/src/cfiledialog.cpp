@@ -230,6 +230,8 @@ CFileDialogWrapper::CFileDialogWrapper(QWidget * parent) : QObject(parent)
     m_mapFilters[AVS_OFFICESTUDIO_FILE_DOCUMENT_EPUB]   = tr("EPUB File (*.epub)");
     m_mapFilters[AVS_OFFICESTUDIO_FILE_DOCUMENT_FB2]    = tr("FB2 File (*.fb2)");
     m_mapFilters[AVS_OFFICESTUDIO_FILE_DOCUMENT_MOBI]   = tr("MOBI File (*.mobi)");
+    m_mapFilters[AVS_OFFICESTUDIO_FILE_DOCUMENT_OFORM]  = tr("OFORM Document (*.oform)");
+    m_mapFilters[AVS_OFFICESTUDIO_FILE_DOCUMENT_DOCXF]  = tr("DOCXF Document (*.docxf)");
 
     m_mapFilters[AVS_OFFICESTUDIO_FILE_PRESENTATION_PPTX]   = tr("PPTX File (*.pptx)");
     m_mapFilters[AVS_OFFICESTUDIO_FILE_PRESENTATION_PPT]    = tr("PPT File (*.ppt)");
@@ -249,6 +251,14 @@ CFileDialogWrapper::CFileDialogWrapper(QWidget * parent) : QObject(parent)
     m_mapFilters[AVS_OFFICESTUDIO_FILE_CROSSPLATFORM_PDFA]  = tr("PDFA File (*.pdf)");
     m_mapFilters[AVS_OFFICESTUDIO_FILE_CROSSPLATFORM_DJVU]  = tr("DJVU File (*.djvu)");
     m_mapFilters[AVS_OFFICESTUDIO_FILE_CROSSPLATFORM_XPS]   = tr("XPS File (*.xps)");
+
+    m_mapFilters[AVS_OFFICESTUDIO_FILE_IMAGE_JPG]           = tr("JPG Image (*.jpg *.jpeg)");
+    m_mapFilters[AVS_OFFICESTUDIO_FILE_IMAGE_PNG]           = tr("PNG Image (*.png)");
+
+#ifdef FILEDIALOG_DONT_USE_NATIVEDIALOGS
+    // Set native dialog from command line arguments
+    m_useNativeDialogFlag = InputArgs::contains(L"--native-file-dialog");
+#endif
 }
 
 CFileDialogWrapper::~CFileDialogWrapper()
@@ -256,10 +266,13 @@ CFileDialogWrapper::~CFileDialogWrapper()
 
 }
 
-bool CFileDialogWrapper::modalSaveAs(QString& fileName)
+bool CFileDialogWrapper::modalSaveAs(QString& fileName, int selected)
 {
 //    QString filter = tr("All files (*.*)"), ext_in;
     QString _filters, _sel_filter, _ext;
+
+    if ( !(selected < 0) && m_mapFilters.contains(selected) )
+        _sel_filter = m_mapFilters[selected];
 
     QFileInfo info(fileName);
     _ext = info.suffix();
@@ -269,14 +282,16 @@ bool CFileDialogWrapper::modalSaveAs(QString& fileName)
         _filters = m_filters;
 
         if ( !(reFilter.indexIn(m_filters) < 0) ) {
-            _sel_filter = reFilter.cap(1);
+            if ( _sel_filter.isEmpty() )
+                _sel_filter = reFilter.cap(1);
         } else {
             fileName = info.absolutePath() + QDir::separator() + info.fileName();
         }
     } else {
         _filters = m_mapFilters[AVS_OFFICESTUDIO_FILE_UNKNOWN];
 
-        _sel_filter = getFilter(_ext);
+        if ( _sel_filter.isEmpty() )
+            _sel_filter = getFilter(_ext);
         _filters.append(";;" + _sel_filter);
     }
 
@@ -290,16 +305,39 @@ bool CFileDialogWrapper::modalSaveAs(QString& fileName)
 #else
     QString _croped_name = fileName.left(fileName.lastIndexOf("."));
     QWidget * _mess_parent = (QWidget *)parent();
+
+    if ( WindowHelper::getEnvInfo() == "GNOME" ) {
+        auto _correctGnomeFilters = [](QString &filters) -> void {
+            QString flt("");
+            foreach (QString str, filters.split(";;")) {
+                const int pos = str.indexOf('(');
+                if (pos != -1) {
+                    const QString suffix = str.mid(pos);
+                    str.replace("(", "\uFF08").replace(")", "\uFF09");
+                    str += suffix;
+                }
+                flt += str + ";;";
+            }
+            const int pos = flt.lastIndexOf(";;");
+            if (pos != -1)
+                flt = flt.mid(0, pos);
+            filters = flt;
+        };
+
+        _correctGnomeFilters(_filters);
+        _correctGnomeFilters(_sel_filter);
+    }
 #endif
     reFilter.setPattern("\\(\\*(\\.\\w+)\\)$");
 
-    auto _exec_dialog = [] (QWidget * p, QString n, QString f, QString& sf) {
-        return QFileDialog::getSaveFileName(p, tr("Save As"), n, f, &sf,
-                                            QFileDialog::DontConfirmOverwrite
+    auto _exec_dialog = [=] (QWidget * p, QString n, QString f, QString& sf) {
+        QFileDialog::Options _opts{QFileDialog::DontConfirmOverwrite};
 #ifdef FILEDIALOG_DONT_USE_NATIVEDIALOGS
-                                            | QFileDialog::DontUseNativeDialog
+        if ( !m_useNativeDialogFlag )
+            _opts |= QFileDialog::DontUseNativeDialog;
+#else
 #endif
-                                            );
+        return QFileDialog::getSaveFileName(p, tr("Save As"), n, f, &sf, _opts);
     };
 
 #ifdef FILEDIALOG_DONT_USE_MODAL
@@ -375,7 +413,7 @@ QStringList CFileDialogWrapper::modalOpen(const QString& path, const QString& fi
     if ( _filter_.isEmpty() ) {
 //        _filter_ = joinFilters();
         _filter_ = m_mapFilters[AVS_OFFICESTUDIO_FILE_UNKNOWN] + ";;" +
-                    tr("Text documents") + " (*.docx *.doc *.odt *.ott *.rtf *.docm *.dotx *.dotm *.fodt *.wps *.wpt *.xml *.pdf *.epub *.djv *.djvu);;" +
+                    tr("Text documents") + " (*.docx *.doc *.odt *.ott *.rtf *.docm *.dotx *.dotm *.fodt *.wps *.wpt *.xml *.pdf *.epub *.djv *.djvu *.docxf *.oform);;" +
                     tr("Spreadsheets") + " (*.xlsx *.xls *.ods *.ots *.csv *.xltx *.xltm *.fods *.et *.ett);;" +
                     tr("Presentations") + " (*.pptx *.ppt *.odp *.otp *.ppsm *.ppsx *.potx *.potm *.fodp *.dps *.dpt);;" +
                     tr("Web Page") + " (*.html *.htm *.mht);;" +
@@ -395,11 +433,12 @@ QStringList CFileDialogWrapper::modalOpen(const QString& path, const QString& fi
                         (QWidget *)parent();
 # endif
 #endif
-    QFileDialog::Options _opts =
+    QFileDialog::Options _opts;
 #ifdef FILEDIALOG_DONT_USE_NATIVEDIALOGS
-            QFileDialog::DontUseNativeDialog;
+    if ( !m_useNativeDialogFlag )
+        _opts = QFileDialog::DontUseNativeDialog;
 #else
-            QFileDialog::Options();
+    _opts = QFileDialog::Options();
 #endif
 
 #ifndef _WIN32
@@ -526,6 +565,22 @@ QStringList CFileDialogWrapper::modalOpenMedia(const QString& type, const QStrin
     return modalOpen(path, filter, &selected, multi);
 }
 
+QString CFileDialogWrapper::selectFolder(const QString& folder)
+{
+    QWidget * _parent =
+#ifdef _WIN32
+                        this;
+#else
+# ifdef FILEDIALOG_DONT_USE_MODAL
+                        NULL;
+# else
+                        (QWidget *)parent();
+# endif
+#endif
+
+    return QFileDialog::getExistingDirectory(_parent, "", folder);
+}
+
 void CFileDialogWrapper::setFormats(std::vector<int>& vf)
 {
     m_filters.clear();
@@ -541,10 +596,27 @@ void CFileDialogWrapper::setFormats(std::vector<int>& vf)
 
 int CFileDialogWrapper::getKey(const QString &value)
 {
+#ifdef Q_OS_LINUX
+    QString _sv{value};
+    if ( WindowHelper::getEnvInfo() == "GNOME" ) {
+        QRegularExpression _re_strbegin("^(.+)\\s\\（", QRegularExpression::CaseInsensitiveOption);
+        QRegularExpressionMatch _re_match = _re_strbegin.match(value);
+
+        if ( _re_match.hasMatch() ) {
+            _sv = _re_match.captured(1);
+        }
+    }
+
+    foreach (QString v, m_mapFilters) {
+        if (v.startsWith(_sv))
+           return m_mapFilters.key(v);
+    }
+#else
     foreach (QString v, m_mapFilters) {
         if (v == value)
            return m_mapFilters.key(value);
     }
+#endif
     return -1;
 }
 

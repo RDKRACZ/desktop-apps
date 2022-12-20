@@ -43,10 +43,6 @@
 #include <QMimeData>
 #include "singleapplication.h"
 
-#ifdef DOCUMENTSCORE_OPENSSL_SUPPORT
-# include "cdialogopenssl.h"
-#endif
-
 CMainWindow::CMainWindow(QWidget *parent)
     : QMainWindow(parent)
     , CX11Decoration(this)
@@ -88,12 +84,13 @@ CMainWindow::CMainWindow(const QRect& geometry)
     if ( _window_rect.isEmpty() )
         _window_rect = QRect(100, 100, 1324 * m_dpiRatio, 800 * m_dpiRatio);
 
-    QSize _window_min_size{MAIN_WINDOW_MIN_WIDTH * m_dpiRatio, MAIN_WINDOW_MIN_HEIGHT * m_dpiRatio};
-    if ( _window_rect.width() < _window_min_size.width() )
-        _window_rect.setWidth(_window_min_size.width());
+    // TODO: skip window min size for usability test
+//    QSize _window_min_size{MAIN_WINDOW_MIN_WIDTH * m_dpiRatio, MAIN_WINDOW_MIN_HEIGHT * m_dpiRatio};
+//    if ( _window_rect.width() < _window_min_size.width() )
+//        _window_rect.setWidth(_window_min_size.width());
 
-    if ( _window_rect.height() < _window_min_size.height() )
-        _window_rect.setHeight(_window_min_size.height());
+//    if ( _window_rect.height() < _window_min_size.height() )
+//        _window_rect.setHeight(_window_min_size.height());
 
     QRect _screen_size = Utils::getScreenGeometry(_window_rect.topLeft());
     if ( _screen_size.width() < _window_rect.width() + 120 ||
@@ -106,7 +103,8 @@ CMainWindow::CMainWindow(const QRect& geometry)
         if ( _screen_size.height() < _window_rect.height() ) _window_rect.setHeight(_screen_size.height());
     }
 
-    setMinimumSize(WindowHelper::correctWindowMinimumSize(_window_rect, _window_min_size));
+    // TODO: skip window min size for usability test
+//    setMinimumSize(WindowHelper::correctWindowMinimumSize(_window_rect, _window_min_size));
     setGeometry(_window_rect);
 
     m_pMainPanel = new CMainPanelImpl(this, !CX11Decoration::isDecorated(), m_dpiRatio);
@@ -118,8 +116,8 @@ CMainWindow::CMainWindow(const QRect& geometry)
         setMouseTracking(true);
 
         QPalette _palette(palette());
-        _palette.setColor(QPalette::Background, AscAppManager::themes().color(CThemes::ColorRole::ecrWindowBackground));
-        setStyleSheet(QString("QMainWindow{border:1px solid %1;}").arg(QString::fromStdWString(AscAppManager::themes().value(CThemes::ColorRole::ecrWindowBorder))));
+        _palette.setColor(QPalette::Background, AscAppManager::themes().current().color(CTheme::ColorRole::ecrWindowBackground));
+        setStyleSheet(QString("QMainWindow{border:1px solid %1;}").arg(QString::fromStdWString(AscAppManager::themes().current().value(CTheme::ColorRole::ecrWindowBorder))));
         setAutoFillBackground(true);
         setPalette(_palette);
     }
@@ -289,7 +287,7 @@ void CMainWindow::slot_windowChangeState(Qt::WindowState s)
 
 void CMainWindow::slot_windowClose()
 {
-    if (windowState() != Qt::WindowFullScreen) {
+    if (windowState() != Qt::WindowFullScreen && isVisible()) {
         GET_REGISTRY_USER(reg_user)
         reg_user.setValue("position", normalGeometry());
         reg_user.setValue("maximized", windowState().testFlag(Qt::WindowMaximized));
@@ -331,7 +329,8 @@ void CMainWindow::setScreenScalingFactor(double factor)
             setGeometry(dest_rect);
         }
 
-        setMinimumSize(WindowHelper::correctWindowMinimumSize(_src_rect, {MAIN_WINDOW_MIN_WIDTH * factor, MAIN_WINDOW_MIN_HEIGHT * factor}));
+        // TODO: skip window min size for usability test
+//        setMinimumSize(WindowHelper::correctWindowMinimumSize(_src_rect, {MAIN_WINDOW_MIN_WIDTH * factor, MAIN_WINDOW_MIN_HEIGHT * factor}));
     }
 }
 
@@ -348,22 +347,6 @@ QRect CMainWindow::windowRect() const
 bool CMainWindow::isMaximized() const
 {
     return windowState() == Qt::WindowMaximized;
-}
-
-void CMainWindow::sendSertificate(int viewid)
-{
-#ifdef DOCUMENTSCORE_OPENSSL_SUPPORT
-    CDialogOpenSsl _dialog(this);
-
-    NSEditorApi::CAscOpenSslData * pData = new NSEditorApi::CAscOpenSslData;
-    if ( _dialog.exec() == QDialog::Accepted ) {
-        _dialog.getResult(*pData);
-    }
-
-    NSEditorApi::CAscMenuEvent * pEvent = new NSEditorApi::CAscMenuEvent(ASC_MENU_EVENT_TYPE_PAGE_SELECT_OPENSSL_CERTIFICATE);
-    pEvent->m_pData = pData;
-    AscAppManager::getInstance().GetViewById(viewid)->Apply(pEvent);
-#endif
 }
 
 QWidget * CMainWindow::handle() const
@@ -412,8 +395,8 @@ void CMainWindow::applyTheme(const std::wstring& theme)
 
     if ( !CX11Decoration::isDecorated() ) {
         QPalette _palette(palette());
-        _palette.setColor(QPalette::Background, AscAppManager::themes().color(theme, CThemes::ColorRole::ecrWindowBackground));
-        setStyleSheet(QString("QMainWindow{border:1px solid %1;}").arg(QString::fromStdWString(AscAppManager::themes().value(theme, CThemes::ColorRole::ecrWindowBorder))));
+        _palette.setColor(QPalette::Background, AscAppManager::themes().current().color(CTheme::ColorRole::ecrWindowBackground));
+        setStyleSheet(QString("QMainWindow{border:1px solid %1;}").arg(QString::fromStdWString(AscAppManager::themes().current().value(CTheme::ColorRole::ecrWindowBorder))));
         setAutoFillBackground(true);
         setPalette(_palette);
     }

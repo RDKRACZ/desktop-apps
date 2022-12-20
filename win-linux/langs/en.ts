@@ -4,37 +4,32 @@
 <context>
     <name>CAscApplicationManagerWrapper</name>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="975"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1068"/>
         <source>Presenter View</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1010"/>
-        <source>Do you want to close all editor windows?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1473"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1619"/>
         <source>Update is running. Break update and close the app?</source>
         <translation>Update is underway. Cancel the update and close the application?</translation>
     </message>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1492"/>
         <source>Close all editors windows?</source>
-        <translation>All the editor windows will be closed. Do you want to continue?</translation>
+        <translation type="vanished">All the editor windows will be closed. Do you want to continue?</translation>
     </message>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1667"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1821"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1822"/>
         <source>Document%1.docx</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1668"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1823"/>
         <source>Book%1.xlsx</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1669"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="1824"/>
         <source>Presentation%1.pptx</source>
         <translation></translation>
     </message>
@@ -42,8 +37,8 @@
 <context>
     <name>CAscTabWidget</name>
     <message>
-        <location filename="../src/asctabwidget.cpp" line="747"/>
-        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="704"/>
+        <location filename="../src/asctabwidget.cpp" line="670"/>
+        <location filename="../src/cascapplicationmanagerwrapper.cpp" line="722"/>
         <source>Document</source>
         <translation>Opening...</translation>
     </message>
@@ -53,7 +48,7 @@
     <message>
         <location filename="../src/linux/cdialogcertificateinfo.cpp" line="35"/>
         <source>Certificate Details</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -61,68 +56,68 @@
     <message>
         <location filename="../src/linux/cdialogcertificateinfo.cpp" line="20"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>CDialogOpenSsl</name>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="101"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="102"/>
         <source>Select certificate</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="105"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="106"/>
         <source>select certificate file...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="106"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="107"/>
         <source>Certifacate password:</source>
         <translation>Certificate password:</translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="107"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="108"/>
         <source>select key file...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="108"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="109"/>
         <source>Key password:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="215"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="233"/>
         <source>Enter certificate path</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="224"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="242"/>
         <source>Certificate is not supported</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="230"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="248"/>
         <source>Enter certificate password</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="231"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="249"/>
         <source>Wrong certificate password.&lt;br&gt;Please enter again</source>
         <translation>Wrong certificate password.&lt;br&gt;Please enter once again</translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="240"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="258"/>
         <source>Enter valid private key</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="250"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="268"/>
         <source>Key is not supported</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/linux/cdialogopenssl.cpp" line="255"/>
+        <location filename="../src/linux/cdialogopenssl.cpp" line="273"/>
         <source>Enter key password</source>
         <translation></translation>
     </message>
@@ -138,32 +133,32 @@
 <context>
     <name>CEditorWindow</name>
     <message>
-        <location filename="../src/ceditorwindow_p.h" line="175"/>
+        <location filename="../src/ceditorwindow_p.h" line="185"/>
         <source>Open main window</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
-        <location filename="../src/ceditorwindow_p.h" line="388"/>
+        <location filename="../src/ceditorwindow_p.h" line="417"/>
         <source>Document must be saved to continue.&lt;br&gt;Save the document?</source>
         <translation>The document must be saved to continue.&lt;br&gt;Save the document?</translation>
     </message>
     <message>
-        <location filename="../src/ceditorwindow_p.h" line="445"/>
+        <location filename="../src/ceditorwindow_p.h" line="488"/>
         <source>Print Document</source>
         <translation>Print document</translation>
     </message>
     <message>
-        <location filename="../src/ceditorwindow_p.h" line="598"/>
+        <location filename="../src/ceditorwindow_p.h" line="660"/>
         <source>Document must be saved firstly.</source>
         <translation>The document must be saved first.</translation>
     </message>
     <message>
-        <location filename="../src/ceditorwindow.cpp" line="152"/>
+        <location filename="../src/ceditorwindow.cpp" line="159"/>
         <source>%1 has been changed. Save changes?</source>
         <translation>%1 has been modified.&lt;br&gt;Do you want to save the changes?</translation>
     </message>
     <message>
-        <location filename="../src/ceditortools.cpp" line="268"/>
+        <location filename="../src/ceditortools.cpp" line="303"/>
         <source>Some data will lost.&lt;br&gt;Continue?</source>
         <translation>If you continue saving in this format all features except the text will be lost.&lt;br&gt;Are you sure you want to continue?</translation>
     </message>
@@ -178,235 +173,255 @@
     <message>
         <location filename="../src/cfiledialog.cpp" line="221"/>
         <source>DOCX Document (*.docx)</source>
-        <translation></translation>
+        <translation>Office Open XML Document (*.docx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="222"/>
         <source>Document template (*.dotx)</source>
-        <translation></translation>
+        <translation>Word Open XML Document Template (*.dotx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="223"/>
         <source>DOC Document (*.doc)</source>
-        <translation></translation>
+        <translation>Word 97-2003 Document (*.doc)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="224"/>
         <source>ODT Document (*.odt)</source>
-        <translation></translation>
+        <translation>OpenDocument Text File (*.odt)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="225"/>
         <source>OpenDocument Document template (*.ott)</source>
-        <translation></translation>
+        <translation>OpenDocument Document Template (*.ott)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="226"/>
         <source>RTF File (*.rtf)</source>
-        <translation></translation>
+        <translation>Rich Text Format File (*.rtf)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="227"/>
         <source>TXT File (*.txt)</source>
-        <translation></translation>
+        <translation>Plain Text File (*.txt)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="228"/>
         <source>HTML File (*.html)</source>
-        <translation></translation>
+        <translation>HyperText Markup Language File (*.html)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="229"/>
         <source>MHT File (*.mht)</source>
-        <translation></translation>
+        <translation>Web Page Archive File (*.mht)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="230"/>
         <source>EPUB File (*.epub)</source>
-        <translation></translation>
+        <translation>Electronic Publication File (*.epub)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="231"/>
         <source>FB2 File (*.fb2)</source>
-        <translation type="unfinished"></translation>
+        <translation>FictionBook 2 File (*.fb2)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="232"/>
         <source>MOBI File (*.mobi)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mobipocket File (*.mobi)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="233"/>
+        <source>OFORM Document (*.oform)</source>
+        <translation>ONLYOFFICE Fillable Online Form (*.oform)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="234"/>
-        <source>PPTX File (*.pptx)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../src/cfiledialog.cpp" line="235"/>
-        <source>PPT File (*.ppt)</source>
-        <translation></translation>
+        <source>DOCXF Document (*.docxf)</source>
+        <translation>ONLYOFFICE Form Template (*.docxf)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="236"/>
-        <source>Presentation template (*.potx)</source>
-        <translation></translation>
+        <source>PPTX File (*.pptx)</source>
+        <translation>Office Open XML Presentation (*.pptx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="237"/>
-        <source>ODP File (*.odp)</source>
-        <translation></translation>
+        <source>PPT File (*.ppt)</source>
+        <translation>PowerPoint 97-2003 Presentation (*.ppt)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="238"/>
+        <source>Presentation template (*.potx)</source>
+        <translation>PowerPoint Open XML Presentation Template (*.potx)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="239"/>
+        <source>ODP File (*.odp)</source>
+        <translation>OpenDocument Presentation (*.odp)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="240"/>
         <source>OpenDocument Presentation Template (*.otp)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="239"/>
-        <source>PPSX File (*.ppsx)</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="../src/cfiledialog.cpp" line="241"/>
-        <source>XLSX File (*.xlsx)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../src/cfiledialog.cpp" line="242"/>
-        <source>Spreadsheet template (*.xltx)</source>
-        <translation></translation>
+        <source>PPSX File (*.ppsx)</source>
+        <translation>Office Open XML Slide Show (*.ppsx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="243"/>
-        <source>XLS File (*.xls)</source>
-        <translation></translation>
+        <source>XLSX File (*.xlsx)</source>
+        <translation>Office Open XML Spreadsheet (*.xlsx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="244"/>
-        <source>ODS File (*.ods)</source>
-        <translation></translation>
+        <source>Spreadsheet template (*.xltx)</source>
+        <translation>Excel Open XML Spreadsheet Template (*.xltx)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="245"/>
+        <source>XLS File (*.xls)</source>
+        <translation>Excel 97-2003 Spreadsheet (*.xls)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="246"/>
+        <source>ODS File (*.ods)</source>
+        <translation>OpenDocument Spreadsheet (*.ods)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="247"/>
         <source>OpenDocument Spreadsheet Template (*.ots)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="246"/>
-        <source>CSV File (*.csv)</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="../src/cfiledialog.cpp" line="248"/>
-        <source>PDF File (*.pdf)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../src/cfiledialog.cpp" line="249"/>
-        <source>PDFA File (*.pdf)</source>
-        <translation></translation>
+        <source>CSV File (*.csv)</source>
+        <translation>Comma Separated Values (*.csv)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="250"/>
-        <source>DJVU File (*.djvu)</source>
-        <translation></translation>
+        <source>PDF File (*.pdf)</source>
+        <translation>Portable Document (*.pdf)</translation>
     </message>
     <message>
         <location filename="../src/cfiledialog.cpp" line="251"/>
+        <source>PDFA File (*.pdf)</source>
+        <translation>Portable Document /A (*.pdf)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="252"/>
+        <source>DJVU File (*.djvu)</source>
+        <translation>Digital Document (*.djvu)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="253"/>
         <source>XPS File (*.xps)</source>
+        <translation>OpenXPS Document (*.xps)</translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="255"/>
+        <source>JPG Image (*.jpg *.jpeg)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="297"/>
+        <location filename="../src/cfiledialog.cpp" line="256"/>
+        <source>PNG Image (*.png)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../src/cfiledialog.cpp" line="340"/>
         <source>Save As</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="333"/>
+        <location filename="../src/cfiledialog.cpp" line="371"/>
         <source>%1 already exists.&lt;br&gt;Do you want to replace it?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="359"/>
+        <location filename="../src/cfiledialog.cpp" line="397"/>
         <source>Word Document</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="362"/>
+        <location filename="../src/cfiledialog.cpp" line="400"/>
         <source>Excel Workbook</source>
         <translation>Excel Spreadsheet</translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="365"/>
+        <location filename="../src/cfiledialog.cpp" line="403"/>
         <source>PowerPoint Presentation</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="368"/>
+        <location filename="../src/cfiledialog.cpp" line="406"/>
         <source>%1 File (*.%2)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="378"/>
-        <location filename="../src/cfiledialog.cpp" line="485"/>
+        <location filename="../src/cfiledialog.cpp" line="416"/>
+        <location filename="../src/cfiledialog.cpp" line="524"/>
         <source>Text documents</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="379"/>
-        <location filename="../src/cfiledialog.cpp" line="493"/>
+        <location filename="../src/cfiledialog.cpp" line="417"/>
+        <location filename="../src/cfiledialog.cpp" line="532"/>
         <source>Spreadsheets</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="380"/>
-        <location filename="../src/cfiledialog.cpp" line="501"/>
+        <location filename="../src/cfiledialog.cpp" line="418"/>
+        <location filename="../src/cfiledialog.cpp" line="540"/>
         <source>Presentations</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="381"/>
+        <location filename="../src/cfiledialog.cpp" line="419"/>
         <source>Web Page</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="382"/>
+        <location filename="../src/cfiledialog.cpp" line="420"/>
         <source>Text files</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="408"/>
-        <location filename="../src/cfiledialog.cpp" line="409"/>
-        <location filename="../src/cfiledialog.cpp" line="414"/>
-        <location filename="../src/cfiledialog.cpp" line="434"/>
-        <location filename="../src/cfiledialog.cpp" line="435"/>
+        <location filename="../src/cfiledialog.cpp" line="447"/>
+        <location filename="../src/cfiledialog.cpp" line="448"/>
+        <location filename="../src/cfiledialog.cpp" line="453"/>
+        <location filename="../src/cfiledialog.cpp" line="473"/>
+        <location filename="../src/cfiledialog.cpp" line="474"/>
         <source>Open Document</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="448"/>
-        <location filename="../src/cfiledialog.cpp" line="457"/>
+        <location filename="../src/cfiledialog.cpp" line="487"/>
+        <location filename="../src/cfiledialog.cpp" line="496"/>
         <source>All Images</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="450"/>
-        <location filename="../src/cfiledialog.cpp" line="459"/>
+        <location filename="../src/cfiledialog.cpp" line="489"/>
+        <location filename="../src/cfiledialog.cpp" line="498"/>
         <source>Jpeg (*.jpeg *.jpg);;Png (*.png);;Gif (*.gif);;Bmp (*.bmp)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="467"/>
-        <location filename="../src/cfiledialog.cpp" line="476"/>
+        <location filename="../src/cfiledialog.cpp" line="506"/>
+        <location filename="../src/cfiledialog.cpp" line="515"/>
         <source>Plugin file (*.plugin)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="516"/>
+        <location filename="../src/cfiledialog.cpp" line="555"/>
         <source>Video file</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cfiledialog.cpp" line="521"/>
+        <location filename="../src/cfiledialog.cpp" line="560"/>
         <source>Audio file</source>
         <translation></translation>
     </message>
@@ -414,28 +429,23 @@
 <context>
     <name>CMainPanel</name>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="1245"/>
+        <location filename="../src/cmainpanel.cpp" line="1238"/>
         <source>%1 is modified.&lt;br&gt;Do you want to keep changes?</source>
         <translation>%1 has been modified.&lt;br&gt;Do you want to save the changes?</translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="150"/>
-        <source>FILE</source>
-        <translation>START</translation>
-    </message>
-    <message>
-        <location filename="../src/cmainpanel.cpp" line="594"/>
-        <location filename="../src/cmainpanel.cpp" line="638"/>
+        <location filename="../src/cmainpanel.cpp" line="555"/>
+        <location filename="../src/cmainpanel.cpp" line="599"/>
         <source>File format not supported.</source>
         <translation>File format is not supported</translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="622"/>
+        <location filename="../src/cmainpanel.cpp" line="583"/>
         <source>%1 doesn&apos;t exists!&lt;br&gt;Remove file from the list?</source>
         <translation>%1 is not available. It might be renamed, moved or deleted.&lt;br&gt;Do you want to remove the file from the list?</translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="682"/>
+        <location filename="../src/cmainpanel.cpp" line="643"/>
         <source>Document must be saved firstly.</source>
         <translation>The document must be saved first.</translation>
     </message>
@@ -444,17 +454,17 @@
         <translation type="vanished">If you continue saving in this format all features except the text will be lost.&lt;br&gt;Are you sure you want to continue?</translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="1180"/>
+        <location filename="../src/cmainpanel.cpp" line="1170"/>
         <source>Sign Up</source>
         <translation>Create portal</translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="843"/>
+        <location filename="../src/cmainpanel.cpp" line="799"/>
         <source>Document must be saved to continue.&lt;br&gt;Save the document?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cmainpanel.cpp" line="980"/>
+        <location filename="../src/cmainpanel.cpp" line="942"/>
         <source>Print Document</source>
         <translation>Print document</translation>
     </message>
@@ -470,37 +480,37 @@
 <context>
     <name>CMessage</name>
     <message>
-        <location filename="../src/cmessage.cpp" line="182"/>
+        <location filename="../src/cmessage.cpp" line="189"/>
         <source>&amp;OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cmessage.cpp" line="281"/>
-        <location filename="../src/cmessage.cpp" line="282"/>
-        <location filename="../src/cmessage.cpp" line="283"/>
-        <location filename="../src/cmessage.cpp" line="284"/>
+        <location filename="../src/cmessage.cpp" line="297"/>
+        <location filename="../src/cmessage.cpp" line="298"/>
+        <location filename="../src/cmessage.cpp" line="299"/>
+        <location filename="../src/cmessage.cpp" line="300"/>
         <source>Yes</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cmessage.cpp" line="281"/>
-        <location filename="../src/cmessage.cpp" line="282"/>
-        <location filename="../src/cmessage.cpp" line="283"/>
-        <location filename="../src/cmessage.cpp" line="284"/>
+        <location filename="../src/cmessage.cpp" line="297"/>
+        <location filename="../src/cmessage.cpp" line="298"/>
+        <location filename="../src/cmessage.cpp" line="299"/>
+        <location filename="../src/cmessage.cpp" line="300"/>
         <source>No</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cmessage.cpp" line="283"/>
-        <location filename="../src/cmessage.cpp" line="284"/>
-        <location filename="../src/cmessage.cpp" line="285"/>
-        <location filename="../src/cmessage.cpp" line="286"/>
+        <location filename="../src/cmessage.cpp" line="299"/>
+        <location filename="../src/cmessage.cpp" line="300"/>
+        <location filename="../src/cmessage.cpp" line="301"/>
+        <location filename="../src/cmessage.cpp" line="302"/>
         <source>Cancel</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/cmessage.cpp" line="285"/>
-        <location filename="../src/cmessage.cpp" line="286"/>
+        <location filename="../src/cmessage.cpp" line="301"/>
+        <location filename="../src/cmessage.cpp" line="302"/>
         <source>OK</source>
         <translation></translation>
     </message>
@@ -525,6 +535,34 @@
     <message>
         <location filename="../src/cprintprogress.cpp" line="130"/>
         <source>Printing...</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../src/cascapplicationmanagerwrapper_private.h" line="183"/>
+        <source>%1 doesn&apos;t exists!&lt;br&gt;Remove file from the list?</source>
+        <translation>%1 is not available. It might be renamed, moved or deleted.&lt;br&gt;Do you want to remove the file from the list?</translation>
+    </message>
+    <message>
+        <location filename="../src/cascapplicationmanagerwrapper_private.h" line="229"/>
+        <source>File %1 cannot be opened or doesn&apos;t exists.</source>
+        <translation>File %1 cannot be opened or doesn&apos;t exist.</translation>
+    </message>
+    <message>
+        <location filename="../src/ceditortools.cpp" line="131"/>
+        <source>All supported files (*.txt *.csv)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../src/ceditortools.cpp" line="131"/>
+        <source>All files (*.*)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../src/casctabdata.cpp" line="179"/>
+        <source>Read only</source>
         <translation></translation>
     </message>
 </context>

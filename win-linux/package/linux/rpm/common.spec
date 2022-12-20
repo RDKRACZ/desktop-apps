@@ -7,13 +7,22 @@ Group: Applications/Office
 URL: %{_publisher_url}
 Vendor: %{_publisher_name}
 Packager: %{_publisher_name} %{_support_mail}
-BuildArch: %{_package_arch}
 AutoReq: no
 AutoProv: no
 
 %description
 %{_company_name} %{_product_name} installation package
  %{_company_name} %{_product_name} is an application for editing office documents (text documents, spreadsheets and presentations) from %{_company_name} cloud portal on local computer without browser using.
+
+%package help
+Summary: Desktop editors local help files
+BuildArch: noarch
+Requires: %{_package_name}
+
+%description help
+%{_company_name} %{_product_name} local help files
+ %{_company_name} %{_product_name} is an application for editing office documents (text documents, spreadsheets and presentations) from %{_company_name} cloud portal on local computer without browser using.
+ This package contains the local help files.
 
 %prep
 rm -rf "%{buildroot}"
@@ -32,6 +41,7 @@ mkdir -p $BIN_DIR $DATA_DIR/applications $DESKTOPEDITORS_PREFIX
 cp -r $COMMON/opt/desktopeditors/* $DESKTOPEDITORS_PREFIX
 cp -t $BIN_DIR $COMMON/usr/bin/%{_desktopeditors_exec}
 cp -t $DATA_DIR/applications $COMMON/usr/share/applications/%{_desktopeditors_exec}.desktop
+echo "package = rpm" > $DESKTOPEDITORS_PREFIX/converter/package.config
 
 %if "%{_company_name}" == "ONLYOFFICE"
 ln -srf $BIN_DIR/%{_desktopeditors_exec} $BIN_DIR/desktopeditors
@@ -51,6 +61,9 @@ cp -t $DATA_DIR/applications \
 ln -srf $BIN_DIR/%{_desktopeditors_exec} $BIN_DIR/%{_package_name}
 %endif
 
+# help
+cp -r $COMMON/help/desktopeditors/* $DESKTOPEDITORS_PREFIX/
+
 %clean
 rm -rf "%{buildroot}"
 
@@ -60,12 +73,21 @@ rm -rf "%{buildroot}"
 %attr(755, root, root) %{_bindir}/%{_desktopeditors_exec}
 %if "%{_company_name}" == "ONLYOFFICE"
 %attr(-, root, root) %{_bindir}/desktopeditors
+%exclude /opt/%{_desktopeditors_prefix}/editors/web-apps/apps/documenteditor/main/resources/help
+%exclude /opt/%{_desktopeditors_prefix}/editors/web-apps/apps/presentationeditor/main/resources/help
+%exclude /opt/%{_desktopeditors_prefix}/editors/web-apps/apps/spreadsheeteditor/main/resources/help
 %else
 %attr(755, root, root) %{_bindir}/%{_imageviewer_exec}
 %attr(755, root, root) %{_bindir}/%{_videoplayer_exec}
 %attr(-, root, root) %{_bindir}/%{_package_name}
 %attr(777, root, root) %{_sysconfdir}/%{_package_name}
 %endif
+
+%files help
+%defattr(-, root, root, -)
+/opt/%{_desktopeditors_prefix}/editors/web-apps/apps/documenteditor/main/resources/help
+/opt/%{_desktopeditors_prefix}/editors/web-apps/apps/presentationeditor/main/resources/help
+/opt/%{_desktopeditors_prefix}/editors/web-apps/apps/spreadsheeteditor/main/resources/help
 
 %pre
 
@@ -82,6 +104,9 @@ if [ ! -x "$XDG_ICON_RESOURCE" ]; then
 fi
 for icon in "/opt/%{_desktopeditors_prefix}/asc-de-"*.png; do
   size="${icon##*/asc-de-}"
+  if [ $1 == 2 ];then #upgrade (not install)
+    "$XDG_ICON_RESOURCE" uninstall --size "${size%.png}" "%{_package_name}"
+  fi
   "$XDG_ICON_RESOURCE" install --size "${size%.png}" "$icon" "%{_package_name}"
 done
 
@@ -94,9 +119,18 @@ MIMEAPPS_LIST="/usr/share/applications/mimeapps.list"
 if [ ! -f "$MIMEAPPS_LIST" ]; then
   echo "[Default Applications]" >"$MIMEAPPS_LIST"
 fi
-if [ $(cat "$MIMEAPPS_LIST" | grep x-scheme-handler/oo-office | wc -l) -eq "0" ]; then
-  echo "x-scheme-handler/oo-office=onlyoffice-desktopeditors.desktop" >>"$MIMEAPPS_LIST"
+if [ $(cat "$MIMEAPPS_LIST" | grep x-scheme-handler/%{_scheme_handler} | wc -l) -eq "0" ]; then
+  echo "x-scheme-handler/%{_scheme_handler}=%{_desktopeditors_exec}.desktop" >>"$MIMEAPPS_LIST"
 fi
+if [ $(cat "$MIMEAPPS_LIST" | grep text/docxf | wc -l) -eq "0" ]; then
+  echo "text/docxf=%{_desktopeditors_exec}.desktop" >>"$MIMEAPPS_LIST"
+fi
+if [ $(cat "$MIMEAPPS_LIST" | grep text/oform | wc -l) -eq "0" ]; then
+  echo "text/oform=%{_desktopeditors_exec}.desktop" >>"$MIMEAPPS_LIST"
+fi
+
+xdg-mime install --mode system /opt/%{_desktopeditors_prefix}/mimetypes/onlyoffice-docxf.xml
+xdg-mime install --mode system /opt/%{_desktopeditors_prefix}/mimetypes/onlyoffice-oform.xml
 
 # Update cache of .desktop file MIME types. Non-fatal since it's just a cache.
 #update-desktop-database > /dev/null 2>&1 || true
@@ -116,15 +150,17 @@ if [ "$action" = "upgrade" ] ; then
 fi
 
 # Remove icons from the system icons
-XDG_ICON_RESOURCE="`which xdg-icon-resource 2> /dev/null || true`"
-if [ ! -x "$XDG_ICON_RESOURCE" ]; then
-  echo "Error: Could not find xdg-icon-resource" >&2
-  exit 1
+if [ $1 == 0 ];then #uninstall (not upgrade)
+  XDG_ICON_RESOURCE="`which xdg-icon-resource 2> /dev/null || true`"
+  if [ ! -x "$XDG_ICON_RESOURCE" ]; then
+    echo "Error: Could not find xdg-icon-resource" >&2
+    exit 1
+  fi
+  for icon in "/opt/%{_desktopeditors_prefix}/asc-de-"*.png; do
+    size="${icon##*/asc-de-}"
+    "$XDG_ICON_RESOURCE" uninstall --size "${size%.png}" "%{_package_name}"
+  done
 fi
-for icon in "/opt/%{_desktopeditors_prefix}/asc-de-"*.png; do
-  size="${icon##*/asc-de-}"
-  "$XDG_ICON_RESOURCE" uninstall --size "${size%.png}" "%{_package_name}"
-done
 
 UPDATE_MENUS="`which update-menus 2> /dev/null || true`"
 if [ -x "$UPDATE_MENUS" ]; then
@@ -137,3 +173,16 @@ fi
 %postun
 
 set -e 		# fail on any error
+
+%posttrans
+
+#for compatibility with old RPMs
+XDG_ICON_RESOURCE="`which xdg-icon-resource 2> /dev/null || true`"
+if [ ! -x "$XDG_ICON_RESOURCE" ]; then
+  echo "Error: Could not find xdg-icon-resource" >&2
+  exit 1
+fi
+for icon in "/opt/%{_desktopeditors_prefix}/asc-de-"*.png; do
+  size="${icon##*/asc-de-}"
+  "$XDG_ICON_RESOURCE" install --size "${size%.png}" "$icon" "%{_package_name}"
+done
